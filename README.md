@@ -123,3 +123,7 @@ $ cd gea/backup/db/
 $ chmod +x basics-db-santafe.sql
 $ ./basics-db-santafe.sql
 ```
+
+## LICENCIA
+
+[BSD](https://raw.github.com/quijot/gea/master/LICENSE)
