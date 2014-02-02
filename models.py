@@ -44,11 +44,11 @@ class EmailNullField(models.EmailField): #subclass the EmailField
             
 class Antecedente(models.Model):
     id = models.AutoField(primary_key=True)
-    expediente = models.ForeignKey('Expediente', null=True, blank=True)
-    expediente_modificado = models.ForeignKey('Expediente', null=True, blank=True, related_name='expediente_modificado')
-    inscripcion_numero = models.IntegerField(null=True, blank=True)
+    expediente = models.ForeignKey('Expediente', null=True, blank=True, default=None)
+    expediente_modificado = models.ForeignKey('Expediente', null=True, blank=True, default=None, related_name='expediente_modificado')
+    inscripcion_numero = models.IntegerField(null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    obs = CharNullField(max_length=255, blank=True)
+    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
     plano_ruta = models.URLField(max_length=100, null=True, blank=True, default=None)
     class Meta:
         db_table = 'antecedente'
@@ -56,24 +56,24 @@ class Antecedente(models.Model):
 class Catastro(models.Model):
     id = models.AutoField(primary_key=True)
     expediente_partida = models.ForeignKey('ExpedientePartida')
-    zona = models.ForeignKey('Zona', null=True, db_column='zona', blank=True)
-    seccion = CharNullField(max_length=10, blank=True)
-    poligono = CharNullField(max_length=10, blank=True)
-    manzana = CharNullField(max_length=10, blank=True)
-    parcela = CharNullField(max_length=10, blank=True)
-    subparcela = CharNullField(max_length=10, blank=True)
+    zona = models.ForeignKey('Zona', db_column='zona', null=True, blank=True, default=None)
+    seccion = CharNullField(max_length=10, null=True, blank=True, default=None)
+    poligono = CharNullField(max_length=10, null=True, blank=True, default=None)
+    manzana = CharNullField(max_length=10, null=True, blank=True, default=None)
+    parcela = CharNullField(max_length=10, null=True, blank=True, default=None)
+    subparcela = CharNullField(max_length=10, null=True, blank=True, default=None)
     class Meta:
         db_table = 'catastro'
 
 class CatastroLocal(models.Model):
     id = models.AutoField(primary_key=True)
     expediente_lugar = models.ForeignKey('ExpedienteLugar')
-    seccion = CharNullField(max_length=20, blank=True)
-    manzana = CharNullField(max_length=20, blank=True)
-    parcela = CharNullField(max_length=20, blank=True)
-    subparcela = CharNullField(max_length=20, blank=True)
+    seccion = CharNullField(max_length=20, null=True, blank=True, default=None)
+    manzana = CharNullField(max_length=20, null=True, blank=True, default=None)
+    parcela = CharNullField(max_length=20, null=True, blank=True, default=None)
+    subparcela = CharNullField(max_length=20, null=True, blank=True, default=None)
     suburbana = models.BooleanField(default=False)
-    poligono = CharNullField(max_length=20, blank=True)
+    poligono = CharNullField(max_length=20, null=True, blank=True, default=None)
     class Meta:
         db_table = 'catastro_local'
         verbose_name_plural = 'catastros_locales'
@@ -93,10 +93,10 @@ class Circunscripcion(models.Model):
 
 class Dp(models.Model):
     dp = models.IntegerField(primary_key=True)
-    nombre = CharNullField(max_length=50, blank=True, verbose_name='nombre depto')
+    nombre = CharNullField(max_length=50, verbose_name='nombre depto')
     habitantes = models.IntegerField(null=True, blank=True)
     superficie = models.IntegerField(null=True, blank=True)
-    cabecera = CharNullField(max_length=50, blank=True)
+    cabecera = CharNullField(max_length=50, null=True, blank=True)
     circunscripcion = models.ForeignKey(Circunscripcion)
     def departamento(self):
         return '%02d %s' % (self.dp, self.nombre)
@@ -111,7 +111,7 @@ class Ds(models.Model):
     id = models.AutoField(primary_key=True)
     dp = models.ForeignKey(Dp, db_column='dp')
     ds = models.IntegerField()
-    nombre = CharNullField(max_length=50, blank=True, verbose_name='nombre distrito')
+    nombre = CharNullField(max_length=50, verbose_name='nombre distrito')
     def distrito(self):
         return '%02d %s' % (self.ds, self.nombre)
     class Meta:
@@ -124,16 +124,16 @@ class Ds(models.Model):
 class Expediente(models.Model):
     MENSURAS = ((1, 1),(2, 2),(3, 3),(4, 4))
     id = models.IntegerField(primary_key=True)
-    fecha_plano = models.DateField(null=True, blank=True)
+    fecha_plano = models.DateField(null=True, blank=True, default=None)
     mensuras = models.SmallIntegerField(null=True, blank=True, choices=MENSURAS, default=1, verbose_name='cantidad de mensuras')
-    inscripcion_numero = models.IntegerField(unique=True, null=True, blank=True)
-    inscripcion_fecha = models.DateField(null=True, blank=True)
+    inscripcion_numero = models.IntegerField(unique=True, null=True, blank=True, default=None)
+    inscripcion_fecha = models.DateField(null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    orden_numero = models.IntegerField(null=True, blank=True)
-    orden_fecha = models.DateField(null=True, blank=True)
+    orden_numero = models.IntegerField(null=True, blank=True, default=None)
+    orden_fecha = models.DateField(null=True, blank=True, default=None)
     sin_inscripcion = models.BooleanField(default=False)
     cancelado = models.BooleanField(default=False)
-    cancelado_por = CharNullField(max_length=100, blank=True)
+    cancelado_por = CharNullField(max_length=100, null=True, blank=True, default=None)
     plano_ruta = models.URLField(max_length=100, null=True, blank=True, default=None)
     def inscripto(self):
         return (inscripcion_numero != 0)
@@ -186,8 +186,8 @@ class ExpedientePersona(models.Model):
     comitente = models.BooleanField(default=False)
     propietario = models.BooleanField(default=True)
     poseedor = models.BooleanField(default=False)
-    partes_indivisas_propias = models.IntegerField(null=True, blank=True)
-    partes_indivisas_total = models.IntegerField(null=True, blank=True)
+    partes_indivisas_propias = models.IntegerField(null=True, blank=True, default=None)
+    partes_indivisas_total = models.IntegerField(null=True, blank=True, default=None)
     sucesion = models.BooleanField(default=False)
     nuda_propiedad = models.BooleanField(default=False)
     usufructo = models.BooleanField(default=False)
@@ -207,7 +207,7 @@ class ExpedienteProfesional(models.Model):
 class Lugar(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = CharNullField(max_length=80)
-    obs = CharNullField(max_length=255, blank=True)
+    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
     class Meta:
         db_table = 'lugar'
         verbose_name_plural = 'lugares'
@@ -226,7 +226,7 @@ class Objeto(models.Model):
 
 class Partida(models.Model):
     id = models.AutoField(primary_key=True)
-    sd = models.ForeignKey('Sd', null=True, db_column='sd', blank=True)
+    sd = models.ForeignKey('Sd', db_column='sd', null=True, blank=True, default=None)
     pii = models.IntegerField()
     subpii = models.IntegerField()
     api = models.SmallIntegerField(null=True, blank=True, default=0)
@@ -242,27 +242,27 @@ class Partida(models.Model):
 class PartidaDominio(models.Model):
     id = models.AutoField(primary_key=True)
     partida = models.ForeignKey(Partida)
-    tomo = models.IntegerField(null=True, blank=True)
+    tomo = models.IntegerField(null=True, blank=True, default=None)
     par = models.BooleanField(default=False)
     impar = models.BooleanField(default=False)
-    folio = models.IntegerField(null=True, blank=True)
-    numero = models.IntegerField(null=True, blank=True)
-    fecha = models.DateField(null=True, blank=True)
-    fecha_inscripcion_definitiva = models.DateField(null=True, blank=True)
+    folio = models.IntegerField(null=True, blank=True, default=None)
+    numero = models.IntegerField(null=True, blank=True, default=None)
+    fecha = models.DateField(null=True, blank=True, default=None)
+    fecha_inscripcion_definitiva = models.DateField(null=True, blank=True, default=None)
     class Meta:
         db_table = 'partida_dominio'
         verbose_name_plural = 'partida_dominios'
 
 class Persona(models.Model):
     id = models.AutoField(primary_key=True)
-    nombres = CharNullField(max_length=100, blank=True)
-    apellidos = CharNullField(max_length=100, blank=True)
-    nombres_alternativos = CharNullField(max_length=100, blank=True)
-    apellidos_alternativos = CharNullField(max_length=100, blank=True)
-    domicilio = CharNullField(max_length=50, blank=True)
-    lugar = models.ForeignKey(Lugar, null=True, blank=True)
-    telefono = CharNullField(max_length=20, blank=True)
-    celular = CharNullField(max_length=20, blank=True)
+    nombres = CharNullField(max_length=100, null=True, blank=True, default=None)
+    apellidos = CharNullField(max_length=100)
+    nombres_alternativos = CharNullField(max_length=100, null=True, blank=True, default=None)
+    apellidos_alternativos = CharNullField(max_length=100, null=True, blank=True, default=None)
+    domicilio = CharNullField(max_length=50, null=True, blank=True, default=None)
+    lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
+    telefono = CharNullField(max_length=20, null=True, blank=True, default=None)
+    celular = CharNullField(max_length=20, null=True, blank=True, default=None)
     email = EmailNullField(max_length=50, unique=True, null=True, blank=True, default=None)
     cuit_cuil = CharNullField(max_length=14, unique=True, null=True, blank=True, default=None, verbose_name='DNI/CUIT/CUIL/CDI')
     def nombre_completo(self):
@@ -275,15 +275,15 @@ class Persona(models.Model):
 
 class Profesional(models.Model):
     id = models.AutoField(primary_key=True)
-    nombres = CharNullField(max_length=50, blank=True)
-    apellidos = CharNullField(max_length=50, blank=True)
-    titulo = models.ForeignKey('Titulo', null=True, blank=True)
-    icopa = CharNullField(max_length=8, blank=True)
-    domicilio = CharNullField(max_length=50, blank=True)
-    lugar = models.ForeignKey(Lugar, null=True, blank=True)
-    telefono = CharNullField(max_length=20, blank=True)
-    celular = CharNullField(max_length=20, blank=True)
-    web = CharNullField(max_length=50, blank=True)
+    nombres = CharNullField(max_length=50)
+    apellidos = CharNullField(max_length=50)
+    titulo = models.ForeignKey('Titulo', null=True, blank=True, default=None)
+    icopa = CharNullField(max_length=8, null=True, blank=True, default=None)
+    domicilio = CharNullField(max_length=50, null=True, blank=True, default=None)
+    lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
+    telefono = CharNullField(max_length=20, null=True, blank=True, default=None)
+    celular = CharNullField(max_length=20, null=True, blank=True, default=None)
+    web = models.URLField(max_length=50, null=True, blank=True, default=None)
     email = EmailNullField(max_length=50, unique=True, null=True, blank=True, default=None)
     cuit_cuil = CharNullField(max_length=14, unique=True, null=True, blank=True, default=None, verbose_name='DNI/CUIT/CUIL/CDI')
     habilitado = models.BooleanField(default=True)
@@ -302,7 +302,7 @@ class Sd(models.Model):
     id = models.AutoField(primary_key=True)
     ds = models.ForeignKey(Ds, db_column='ds')
     sd = models.IntegerField()
-    nombre = CharNullField(max_length=50, blank=True, verbose_name='nombre subdistrito')
+    nombre = CharNullField(max_length=50, null = True, blank=True, default = None, verbose_name='nombre subdistrito')
     class Meta:
         db_table = 'sd'
         verbose_name_plural = 'subdistritos'
@@ -312,7 +312,7 @@ class Sd(models.Model):
 
 class Titulo(models.Model):
     id = models.AutoField(primary_key=True)
-    nombre = CharNullField(max_length=30, blank=True)
+    nombre = CharNullField(max_length=30)
     class Meta:
         db_table = 'titulo'
         ordering = ['nombre']
@@ -321,9 +321,10 @@ class Titulo(models.Model):
 
 class Zona(models.Model):
     id = models.IntegerField(primary_key=True)
-    descripcion = CharNullField(max_length=50, blank=True)
+    descripcion = CharNullField(max_length=50)
     class Meta:
         db_table = 'zona'
         ordering = ['id']
     def __unicode__(self):
         return str(self.id)
+

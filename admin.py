@@ -192,32 +192,32 @@ class SdAdmin(admin.ModelAdmin):
 admin.site.register(Sd, SdAdmin)
 class CatastroLocalInline(NestedStackedInline):
     model = CatastroLocal
-    extra = 0
+    extra = 1
 class ExpedienteLugarInline(NestedTabularInline):
     model = ExpedienteLugar
-    extra = 0
+    extra = 1
     inlines = [CatastroLocalInline]
 class ExpedienteObjetoInline(NestedTabularInline):
     model = ExpedienteObjeto
-    extra = 0
+    extra = 1
 class ExpedientePersonaInline(NestedTabularInline):
     model = ExpedientePersona
-    extra = 0
+    extra = 1
     ordering = ['-comitente']
 class ExpedienteProfesionalInline(NestedTabularInline):
     model = ExpedienteProfesional
-    extra = 0
+    extra = 1
 class CatastroInline(NestedStackedInline):
     model = Catastro
-    extra = 0
+    extra = 1
 class ExpedientePartidaInline(NestedTabularInline):
     model = ExpedientePartida
-    extra = 0
+    extra = 1
     inlines = [CatastroInline]
 class AntecedenteInline(NestedTabularInline):
     model = Antecedente
     fk_name = 'expediente'
-    extra = 0
+    extra = 1
     ordering = ['-expediente_modificado', '-inscripcion_numero']
 class ExpedienteAdmin(NestedModelAdmin):
     fieldsets = [
@@ -276,7 +276,7 @@ class ObjetoAdmin(admin.ModelAdmin):
 admin.site.register(Objeto, ObjetoAdmin)
 class PartidaDominioInline(admin.TabularInline):
     model = PartidaDominio
-    extra = 0
+    extra = 1
 class PartidaAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields': [('sd', 'pii', 'subpii', 'api')]}),
