@@ -4,11 +4,11 @@ from django.shortcuts import render
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import Context, loader
-from gui.models import Persona, Expediente, ExpedientePersona
+from gea.models import Persona, Expediente, ExpedientePersona
 
 def index(request):
     latest_exp_list = Expediente.objects.order_by('-id')[:5]
-    template = loader.get_template('gui/index.html')
+    template = loader.get_template('gea/index.html')
     context = Context({
         'latest_exp_list': latest_exp_list,
     })
