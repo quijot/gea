@@ -149,6 +149,64 @@ $ python manage.py runserver
 
 e ingresamos a [http://127.0.0.1:8000/](http://127.0.0.1:8000/)...
 
+## Extra: Hacerlo funcionar en [Zentyal](http://www.zentyal.org/)
+
+### Crear un Host Virtual en Zentyal
+
+Office -> Servidor Web -> Hosts virtuales -> Añadir nuevo
+
+Supongamos que elegimos el nombre __gea.net__.
+
+### Editar httpd.conf para configurar el daemon de wsgi
+
+```bash
+$ sudo vim /etc/apache2/httpd.conf
+```
+
+Luego escribir esto dentro, para usar ```wsgi``` como daemon. Reemplazar _user_ y _path-to-estudio_ con lo que corresponda.
+
+```bash
+WSGIDaemonProcess gea.net python-path=/path-to-estudio
+WSGIProcessGroup gea.net
+
+WSGIScriptAlias / /path-to-estudio/estudio/wsgi.py
+WSGIPythonPath /path-to-estudio
+
+<Directory /path-to-estudio/estudio>
+<Files wsgi.py>
+Order deny,allow
+Allow from all
+</Files>
+</Directory>
+```
+
+### Crear un alias para static en user-ebox-gea.net
+
+```bash
+$ sudo vim /etc/apache2/sites-available/user-ebox-gea.net/static.alias
+```
+
+Y escribir esto dentro...
+
+```bash
+Alias /static/ /path-to-estudio/
+
+<Directory /path-to-estudio>
+Order deny,allow
+Allow from all
+</Directory>
+```
+
+### Usar __gea__ en Zentyal
+
+¡Listo! Ya podemos entrar a [http://gea.net/admin](http://gea.net/admin) y usar __gea__ desde todas las terminales en Zentyal!
+
+Cada vez que hagamos un cambio en la aplicación, deberemos hacer reload del servidor web:
+
+```bash
+$ sudo service apache2 reload
+```
+
 ## LICENCIA
 
 [BSD](https://raw.github.com/quijot/gea/master/LICENSE)
