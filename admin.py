@@ -140,16 +140,16 @@ class CantidadDeExpedientesFilter(admin.SimpleListFilter):
 class AntecedenteAdmin(admin.ModelAdmin):
     list_display = ('expediente', 'expediente_modificado', 'inscripcion_numero', 'duplicado', 'obs', 'plano_ruta')
     list_editable = ('expediente_modificado', 'inscripcion_numero', 'duplicado', 'obs', 'plano_ruta')
-    search_fields = ['expediente', 'expediente_modificado', 'inscripcion_numero', 'duplicado', 'obs', 'show_plano_ruta']
+    search_fields = ['expediente__id', 'expediente_modificado__id', 'inscripcion_numero', 'duplicado', 'obs']
     actions_on_bottom = True
     list_per_page = 20
     save_on_top = True
     ordering = ['expediente', '-expediente_modificado', 'inscripcion_numero']
     def show_plano_ruta(self, obj):
         if obj.plano_ruta != '' and obj.plano_ruta != None:
-            return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.plano_ruta)
+            return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.inscripcion_numero)
         else:
-            return obj.plano_ruta
+            return None
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
 admin.site.register(Antecedente, AntecedenteAdmin)
@@ -192,32 +192,32 @@ class SdAdmin(admin.ModelAdmin):
 admin.site.register(Sd, SdAdmin)
 class CatastroLocalInline(NestedStackedInline):
     model = CatastroLocal
-    extra = 1
+    extra = 0
 class ExpedienteLugarInline(NestedTabularInline):
     model = ExpedienteLugar
-    extra = 1
+    extra = 0
     inlines = [CatastroLocalInline]
 class ExpedienteObjetoInline(NestedTabularInline):
     model = ExpedienteObjeto
-    extra = 1
+    extra = 0
 class ExpedientePersonaInline(NestedTabularInline):
     model = ExpedientePersona
-    extra = 1
+    extra = 0
     ordering = ['-comitente']
 class ExpedienteProfesionalInline(NestedTabularInline):
     model = ExpedienteProfesional
-    extra = 1
+    extra = 0
 class CatastroInline(NestedStackedInline):
     model = Catastro
-    extra = 1
+    extra = 0
 class ExpedientePartidaInline(NestedTabularInline):
     model = ExpedientePartida
-    extra = 1
+    extra = 0
     inlines = [CatastroInline]
 class AntecedenteInline(NestedTabularInline):
     model = Antecedente
     fk_name = 'expediente'
-    extra = 1
+    extra = 0
     ordering = ['-expediente_modificado', '-inscripcion_numero']
 class ExpedienteAdmin(NestedModelAdmin):
     fieldsets = [
@@ -230,16 +230,16 @@ class ExpedienteAdmin(NestedModelAdmin):
     list_display = ('id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion', 'orden_numero', 'orden_fecha', 'cancelado', 'show_plano_ruta')
     list_editable = ('fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'orden_numero', 'orden_fecha', 'sin_inscripcion', 'cancelado')
     list_filter = [InscriptoFilter, 'duplicado', TieneOrdenFilter, TieneOrdenPendienteFilter, TieneAntecedentesFilter, 'sin_inscripcion', 'cancelado', 'cancelado_por', TieneObjetoFilter, 'expedientelugar__catastrolocal__seccion', 'expedientelugar__catastrolocal__manzana', 'expedientelugar__catastrolocal__parcela']
-    search_fields = ['id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'orden_numero', 'orden_fecha', 'cancelado_por', 'expedientelugar__lugar__nombre', 'expedientepersona__persona__apellidos', 'expedientepersona__persona__nombres', 'expedientepersona__persona__apellidos_alternativos', 'expedientepersona__persona__nombres_alternativos', 'expedienteprofesional__profesional__apellidos', 'expedienteobjeto__objeto__nombre', 'expedientepartida__partida__pii', 'antecedente__expediente_modificado_id__id', 'antecedente__inscripcion_numero']
+    search_fields = ['id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'orden_numero', 'orden_fecha', 'cancelado_por', 'expedientelugar__lugar__nombre', 'expedientepersona__persona__apellidos', 'expedientepersona__persona__nombres', 'expedientepersona__persona__apellidos_alternativos', 'expedientepersona__persona__nombres_alternativos', 'expedienteprofesional__profesional__apellidos', 'expedienteobjeto__objeto__nombre', 'expedientepartida__partida__pii', 'antecedente__expediente_modificado__id', 'antecedente__inscripcion_numero']
     actions_on_bottom = True
     date_hierarchy = 'inscripcion_fecha'
     list_per_page = 20
     save_on_top = True
     def show_plano_ruta(self, obj):
         if obj.plano_ruta != '' and obj.plano_ruta != None:
-            return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.plano_ruta)
+            return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.inscripcion_numero)
         else:
-            return obj.plano_ruta
+            return None
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
 admin.site.register(Expediente, ExpedienteAdmin)
@@ -276,7 +276,7 @@ class ObjetoAdmin(admin.ModelAdmin):
 admin.site.register(Objeto, ObjetoAdmin)
 class PartidaDominioInline(admin.TabularInline):
     model = PartidaDominio
-    extra = 1
+    extra = 0
 class PartidaAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields': [('sd', 'pii', 'subpii', 'api')]}),
