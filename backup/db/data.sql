@@ -1,93 +1,5 @@
 --
--- PostgreSQL database dump
---
-
-SET statement_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
---
--- Name: plpythonu; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: 
---
-
-CREATE OR REPLACE PROCEDURAL LANGUAGE plpythonu;
-
-
-ALTER PROCEDURAL LANGUAGE plpythonu;
-
-SET search_path = public, pg_catalog;
-
---
--- Name: dvapi(integer, integer, integer, integer, integer); Type: FUNCTION; Schema: public; Owner: 
---
-
-CREATE FUNCTION dvapi(dp integer, ds integer, sd integer, pii integer, subpii integer) RETURNS integer
-    LANGUAGE plpythonu
-    AS $$
-    # PL/Python function body
-    coef = '9731'
-    _coef = coef + coef + coef + coef
-    strpii = '%02d%02d%02d%06d%04d' % (dp, ds, sd, pii, subpii)
-    suma = 0
-    for i in range(0, len(strpii)):
-        m = str(int(strpii[i]) * int(_coef[i]))
-        suma += int(m[len(m) - 1])
-    return (10 - (suma % 10)) % 10
-$$;
-
-
-ALTER FUNCTION public.dvapi(dp integer, ds integer, sd integer, pii integer, subpii integer);
-
---
--- Name: update_dvapi(); Type: FUNCTION; Schema: public; Owner: 
---
-
-CREATE FUNCTION update_dvapi() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    sd_sd integer;
-    ds_id integer;
-    ds_ds integer;
-    dp_dp integer;
-BEGIN
-    IF (NEW.sd IS NOT NULL) THEN
-        sd_sd := (SELECT sd FROM sd WHERE id=NEW.sd);
-        ds_id := (SELECT ds FROM sd WHERE id=NEW.sd);
-        ds_ds := (SELECT ds FROM ds WHERE id=ds_id);
-        dp_dp := (SELECT dp FROM ds WHERE id=ds_id);
-        UPDATE partida SET api = (SELECT dvapi(dp_dp, ds_ds, sd_sd, NEW.pii, NEW.subpii)) WHERE pii = NEW.pii AND subpii = NEW.subpii;
-    END IF;
-    RETURN NULL;
-END;
-$$;
-
-
-ALTER FUNCTION public.update_dvapi();
-
-SET default_tablespace = '';
-
-SET default_with_oids = false;
-
-
---
--- Data for Name: circunscripcion; Type: TABLE DATA; Schema: public; Owner: 
+-- Data for Name: circunscripcion; Type: TABLE DATA 
 --
 
 COPY circunscripcion (id, nombre, orden) FROM stdin;
@@ -97,7 +9,7 @@ COPY circunscripcion (id, nombre, orden) FROM stdin;
 
 
 --
--- Data for Name: dp; Type: TABLE DATA; Schema: public; Owner: 
+-- Data for Name: dp; Type: TABLE DATA 
 --
 
 COPY dp (dp, nombre, habitantes, superficie, cabecera, circunscripcion_id) FROM stdin;
@@ -124,7 +36,7 @@ COPY dp (dp, nombre, habitantes, superficie, cabecera, circunscripcion_id) FROM 
 
 
 --
--- Data for Name: ds; Type: TABLE DATA; Schema: public; Owner: 
+-- Data for Name: ds; Type: TABLE DATA; 
 --
 
 COPY ds (id, dp, ds, nombre) FROM stdin;
@@ -495,14 +407,14 @@ COPY ds (id, dp, ds, nombre) FROM stdin;
 
 
 --
--- Name: ds_id_seq; Type: SEQUENCE SET; Schema: public; Owner: 
+-- Name: ds_id_seq; Type: SEQUENCE SET; 
 --
 
-SELECT pg_catalog.setval('ds_id_seq', 363, false);
+SELECT setval('ds_id_seq', 363, false);
 
 
 --
--- Data for Name: lugar; Type: TABLE DATA; Schema: public; Owner: 
+-- Data for Name: lugar; Type: TABLE DATA; 
 --
 
 COPY lugar (id, nombre, obs) FROM stdin;
@@ -519,7 +431,7 @@ COPY lugar (id, nombre, obs) FROM stdin;
 -- Name: lugar_id_seq; Type: SEQUENCE SET; Schema: public; Owner: 
 --
 
-SELECT pg_catalog.setval('lugar_id_seq', 7, true);
+SELECT setval('lugar_id_seq', 6, true);
 
 
 --
@@ -535,7 +447,7 @@ COPY objeto (id, nombre) FROM stdin;
 -- Name: objeto_id_seq; Type: SEQUENCE SET; Schema: public; Owner: 
 --
 
-SELECT pg_catalog.setval('objeto_id_seq', 2, true);
+SELECT setval('objeto_id_seq', 1, true);
 
 
 --
@@ -1070,7 +982,7 @@ COPY sd (id, ds, sd, nombre) FROM stdin;
 -- Name: sd_id_seq; Type: SEQUENCE SET; Schema: public; Owner: 
 --
 
-SELECT pg_catalog.setval('sd_id_seq', 520, false);
+SELECT setval('sd_id_seq', 520, false);
 
 
 --
@@ -1090,7 +1002,7 @@ COPY titulo (id, nombre) FROM stdin;
 -- Name: titulo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: 
 --
 
-SELECT pg_catalog.setval('titulo_id_seq', 5, true);
+SELECT setval('titulo_id_seq', 5, true);
 
 
 --
@@ -1104,33 +1016,4 @@ COPY zona (id, descripcion) FROM stdin;
 4	Parcelas Rurales (explotaciones agropecuarias)
 5	Parcelas Rurales (estableciamientos industriales)
 \.
-
-
---
--- Name: dvapi_insert; Type: TRIGGER; Schema: public; Owner: 
---
-
-CREATE TRIGGER dvapi_insert AFTER INSERT ON partida FOR EACH ROW EXECUTE PROCEDURE update_dvapi();
-
-
---
--- Name: dvapi_update; Type: TRIGGER; Schema: public; Owner: 
---
-
-CREATE TRIGGER dvapi_update AFTER UPDATE OF sd, pii, subpii ON partida FOR EACH ROW EXECUTE PROCEDURE update_dvapi();
-
-
---
--- Name: public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
-GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
--- PostgreSQL database dump complete
---
 
