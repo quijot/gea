@@ -56,7 +56,9 @@ $ pip install -e git+git://github.com/quijot/grappelli-nested-inlines.git#egg=gr
 ```bash
 $ django-admin.py startproject estudio
 $ cd estudio
-$ python manage.py startapp gea
+$ # si no tenés un superuser de postgresql
+$ createuser pgsuperuser
+$ # responder "yes" cuando pregunte si queremos que sea superuser
 $ createdb gea
 ```
 
@@ -66,17 +68,23 @@ $ createdb gea
 
 ```bash
 $ # dentro de "estudio"
+$ wget https://github.com/quijot/gea/archive/master.zip
 $ unzip master.zip
+$ mv gea-master gea
 ```
 
-o clonar (requiere git):
+o clonar (requiere git -> ```$ apt-get install git```):
 
 ```bash
 $ # dentro de "estudio"
 $ git clone https://github.com/quijot/gea.git
 ```
 
-### Editar ```settings.py``` del proyecto Django
+### Editar ```settings.py``` del proyecto Django:
+
+```bash
+$ vim estudio/settings.py
+```
 
 - Agregar __gea__ a las ```INSTALLED_APPS```:
 
@@ -98,8 +106,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'gea',
-        'USER': '<your-user>',
-        'PASSWORD': '<your-password>',
+        'USER': 'pgsuperuser',
+        'PASSWORD': '<your-pg-password>',
     }
 }
 ```
@@ -111,7 +119,7 @@ $ # dentro de "estudio"
 $ python manage.py syncdb
 ```
 
-La primera vez que se ejecute ```syncdb``` pedirá ```<your-user>``` y ```<your-passwordr>```. Los mismos que pusiste en el archivo ```settings-py``` en la configuración de la base de datos.
+Además de sincronizar la base de datos, también se estará instalando el sistema de autenticación de Django, _Django's auth system_, con lo cual, pedirá usuario y contraseña, por ejemplo: _admin_ y _Af7Dr2ujW_.
 
 #### Opcional: Volcar datos de la provincia de Santa Fe
 
@@ -119,11 +127,29 @@ Ejecutar el script que completa datos referidos a Circunscripciones, Departament
 
 ```bash
 $ # dentro de "estudio"
-$ cd gea/backup/db/
-$ chmod +x basics-db-santafe.sql
-$ ./basics-db-santafe.sql
+$ chmod +x gea/backup/db/basics-db.sh
+$ ./gea/backup/db/basics-db.sh
 ```
+
+### Archivos estáticos (css, img, js)
+
+Por último, algo muy importante: los archivos de estilo, imágenes y scripts que usará nuestra nueva aplicación.
+
+```bash
+$ # dentro de "estudio"
+$ python manage.py collectstatic
+```
+
+¡LISTO... Ahora podemos probar cómo quedó nuestra django-app!
+
+```bash
+$ # dentro de "estudio"
+$ python manage.py runserver
+```
+
+e ingresamos a [http://127.0.0.1:8000/](http://127.0.0.1:8000/)...
 
 ## LICENCIA
 
 [BSD](https://raw.github.com/quijot/gea/master/LICENSE)
+
