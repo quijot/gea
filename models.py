@@ -26,11 +26,27 @@ class CharNullField(models.CharField): #subclass the CharField
        else:
             return value #otherwise, just pass the value
 
+class URLNullField(models.URLField): #subclass the URLField
+    description = "URLField that stores NULL but returns ''"
+    __metaclass__ = models.SubfieldBase # this ensures to_python will be called
+    def to_python(self, value):  #this is the value right out of the db, or an instance
+       if isinstance(value, models.URLField): #if an instance, just return the instance
+              return value 
+       if value==None:   #if the db has a NULL (==None in Python)
+              return ""  #convert it into the Django-friendly '' string
+       else:
+              return value #otherwise, return just the value
+    def get_prep_value(self, value):  #catches value right before sending to db
+       if value=="":     #if Django tries to save '' string, send the db None (NULL)
+            return None
+       else:
+            return value #otherwise, just pass the value
+
 class EmailNullField(models.EmailField): #subclass the EmailField
     description = "EmailField that stores NULL but returns ''"
     __metaclass__ = models.SubfieldBase # this ensures to_python will be called
     def to_python(self, value):  #this is the value right out of the db, or an instance
-        if isinstance(value, models.CharField): #if an instance, just return the instance
+        if isinstance(value, models.EmailField): #if an instance, just return the instance
             return value 
         if value==None:   #if the db has a NULL (==None in Python)
             return ""  #convert it into the Django-friendly '' string
@@ -49,7 +65,7 @@ class Antecedente(models.Model):
     inscripcion_numero = models.IntegerField(null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
     obs = CharNullField(max_length=255, null=True, blank=True, default=None)
-    plano_ruta = models.URLField(max_length=100, null=True, blank=True, default=None)
+    plano_ruta = URLNullField(max_length=100, null=True, blank=True, default=None)
     class Meta:
         db_table = 'antecedente'
 
@@ -134,7 +150,7 @@ class Expediente(models.Model):
     sin_inscripcion = models.BooleanField(default=False)
     cancelado = models.BooleanField(default=False)
     cancelado_por = CharNullField(max_length=100, null=True, blank=True, default=None)
-    plano_ruta = models.URLField(max_length=100, null=True, blank=True, default=None)
+    plano_ruta = URLNullField(max_length=100, null=True, blank=True, default=None)
     def inscripto(self):
         return (inscripcion_numero != 0)
     class Meta:
@@ -283,7 +299,7 @@ class Profesional(models.Model):
     lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
     telefono = CharNullField(max_length=20, null=True, blank=True, default=None)
     celular = CharNullField(max_length=20, null=True, blank=True, default=None)
-    web = models.URLField(max_length=50, null=True, blank=True, default=None)
+    web = URLNullField(max_length=50, null=True, blank=True, default=None)
     email = EmailNullField(max_length=50, unique=True, null=True, blank=True, default=None)
     cuit_cuil = CharNullField(max_length=14, unique=True, null=True, blank=True, default=None, verbose_name='DNI/CUIT/CUIL/CDI')
     habilitado = models.BooleanField(default=True)
