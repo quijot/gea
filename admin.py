@@ -107,6 +107,20 @@ class TieneObjetoFilter(admin.SimpleListFilter):
         if self.value() == 'no':
             return queryset.filter(expedienteobjeto__isnull=True)
 
+class TienePlanoFilter(admin.SimpleListFilter):
+    title = _('tiene plano cargado')
+    parameter_name = 'plano'
+    def lookups(self, request, model_admin):
+        return (
+            ('si', _('Si')),
+            ('no', _('No')),
+        )
+    def queryset(self, request, queryset):
+        if self.value() == 'si':
+            return queryset.exclude(plano_ruta__isnull=True).exclude(plano_ruta__exact='')
+        if self.value() == 'no':
+            return queryset.filter(Q(plano_ruta__isnull=True) | Q(plano_ruta__exact=''))
+
 # Personas
 class CantidadDeExpedientesFilter(admin.SimpleListFilter):
     title = _('cantidad de expedientes')
@@ -149,7 +163,7 @@ class AntecedenteAdmin(admin.ModelAdmin):
         if obj.plano_ruta != '' and obj.plano_ruta != None:
             return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.inscripcion_numero)
         else:
-            return None
+            return obj.plano_ruta
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
 admin.site.register(Antecedente, AntecedenteAdmin)
@@ -229,7 +243,7 @@ class ExpedienteAdmin(NestedModelAdmin):
     inlines = [ExpedienteLugarInline, ExpedienteObjetoInline, ExpedientePersonaInline, ExpedienteProfesionalInline, ExpedientePartidaInline, AntecedenteInline]
     list_display = ('id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion', 'orden_numero', 'orden_fecha', 'cancelado', 'show_plano_ruta')
     list_editable = ('fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'orden_numero', 'orden_fecha', 'sin_inscripcion', 'cancelado')
-    list_filter = [InscriptoFilter, 'duplicado', TieneOrdenFilter, TieneOrdenPendienteFilter, TieneAntecedentesFilter, 'sin_inscripcion', 'cancelado', 'cancelado_por', TieneObjetoFilter, 'expedientelugar__catastrolocal__seccion', 'expedientelugar__catastrolocal__manzana', 'expedientelugar__catastrolocal__parcela']
+    list_filter = [InscriptoFilter, 'duplicado', 'sin_inscripcion', TieneOrdenFilter, TieneOrdenPendienteFilter, 'cancelado', 'cancelado_por', TienePlanoFilter, 'expedientelugar__catastrolocal__seccion', 'expedientelugar__catastrolocal__manzana', 'expedientelugar__catastrolocal__parcela', TieneObjetoFilter, TieneAntecedentesFilter]
     search_fields = ['id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'orden_numero', 'orden_fecha', 'cancelado_por', 'expedientelugar__lugar__nombre', 'expedientepersona__persona__apellidos', 'expedientepersona__persona__nombres', 'expedientepersona__persona__apellidos_alternativos', 'expedientepersona__persona__nombres_alternativos', 'expedienteprofesional__profesional__apellidos', 'expedienteobjeto__objeto__nombre', 'expedientepartida__partida__pii', 'antecedente__expediente_modificado__id', 'antecedente__inscripcion_numero']
     actions_on_bottom = True
     date_hierarchy = 'inscripcion_fecha'
@@ -239,7 +253,7 @@ class ExpedienteAdmin(NestedModelAdmin):
         if obj.plano_ruta != '' and obj.plano_ruta != None:
             return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.inscripcion_numero)
         else:
-            return None
+            return obj.plano_ruta
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
 admin.site.register(Expediente, ExpedienteAdmin)
