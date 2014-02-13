@@ -80,6 +80,13 @@ class Catastro(models.Model):
     subparcela = CharNullField(max_length=10, null=True, blank=True, default=None)
     class Meta:
         db_table = 'catastro'
+    def __unicode__(self):
+        if str(self.zona) in ('1', '2', '3'):
+            return 'Z:%s - S:%s - M:%s - P:%s' % (self.zona, self.seccion, self.manzana, self.parcela)
+        elif str(self.zona) in ('4', '5'):
+            return 'Z:%s - Pol:%s - P:%s' % (self.zona, self.poligono, self.parcela)
+        else:
+            return ''
 
 class CatastroLocal(models.Model):
     id = models.AutoField(primary_key=True)
@@ -94,7 +101,7 @@ class CatastroLocal(models.Model):
         db_table = 'catastro_local'
         verbose_name_plural = 'catastros_locales'
     def __unicode__(self):
-        return '%s-%s-%s' % (self.seccion, self.manzana, self.parcela)
+        return 'S:%s - M:%s - P:%s' % (self.seccion, self.manzana, self.parcela)
 
 class Circunscripcion(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -343,4 +350,3 @@ class Zona(models.Model):
         ordering = ['id']
     def __unicode__(self):
         return str(self.id)
-
