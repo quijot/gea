@@ -114,6 +114,40 @@ class Circunscripcion(models.Model):
     def __unicode__(self):
         return self.nombre
 
+class Comprobante(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = CharNullField(max_length=50)
+    class Meta:
+        db_table = 'comprobante'
+    def __unicode__(self):
+        return self.nombre
+
+class Presupuesto(models.Model):
+    id = models.AutoField(primary_key=True)
+    expediente = models.ForeignKey('Expediente')
+    monto = models.DecimalField(max_digits=8, decimal_places=2)
+    fecha = models.DateField()
+    porcentaje_cancelado = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='% cancelado')
+    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    class Meta:
+        db_table = 'presupuesto'
+    def __unicode__(self):
+        return '%s - $%s - %s' % (self.expediente, str(self.monto), str(self.fecha))
+
+class Pago(models.Model):
+    id = models.AutoField(primary_key=True)
+    presupuesto = models.ForeignKey(Presupuesto)
+    comprobante = models.ForeignKey(Comprobante)
+    comprobante_nro = models.IntegerField(null=True, blank=True, default=None)
+    fecha = models.DateField(null=True, blank=True, default=None)
+    monto = models.DecimalField(max_digits=8, decimal_places=2)
+    porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
+    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    class Meta:
+        db_table = 'pago'
+    def __unicode__(self):
+        return '%s%% - %s' % (str(self.porcentaje), str(self.fecha))
+
 class Dp(models.Model):
     dp = models.IntegerField(primary_key=True)
     nombre = CharNullField(max_length=50, verbose_name='nombre depto')

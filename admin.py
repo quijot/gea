@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 # Register your models here.
 
-from gea.models import Antecedente, Catastro, CatastroLocal, Circunscripcion, Dp, Ds, Sd, Expediente, ExpedienteLugar, ExpedienteObjeto, ExpedientePartida, ExpedientePersona, ExpedienteProfesional, Lugar, Objeto, Partida, PartidaDominio, Persona, Profesional, Titulo, Zona
+from gea.models import Antecedente, Catastro, CatastroLocal, Circunscripcion, Comprobante, Dp, Ds, Sd, Expediente, ExpedienteLugar, ExpedienteObjeto, ExpedientePartida, ExpedientePersona, ExpedienteProfesional, Lugar, Objeto, Pago, Partida, PartidaDominio, Persona, Presupuesto, Profesional, Titulo, Zona
 
 
 from django.utils.translation import ugettext_lazy as _
@@ -180,6 +180,7 @@ class CircunscripcionAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     save_on_top = True
 admin.site.register(Circunscripcion, CircunscripcionAdmin)
+admin.site.register(Comprobante)
 class DpAdmin(admin.ModelAdmin):
     list_display = ('dp', 'nombre', 'habitantes', 'superficie', 'cabecera', 'circunscripcion')
     #list_editable = ('nombre', 'habitantes', 'superficie', 'cabecera', 'circunscripcion')
@@ -233,6 +234,13 @@ class AntecedenteInline(NestedTabularInline):
     fk_name = 'expediente'
     extra = 0
     ordering = ['-expediente_modificado', '-inscripcion_numero']
+class PagoInline(NestedTabularInline):
+    model = Pago
+    extra = 0
+class PresupuestoInline(NestedTabularInline):
+    model = Presupuesto
+    extra = 0
+    inlines = [PagoInline]
 class ExpedienteAdmin(NestedModelAdmin):
     fieldsets = [
         (None,       {'fields': [('id', 'fecha_plano', 'mensuras')], 'classes': ('extrapretty')}),
@@ -288,6 +296,7 @@ class ObjetoAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     save_on_top = True
 admin.site.register(Objeto, ObjetoAdmin)
+admin.site.register(Pago)
 class PartidaDominioInline(admin.TabularInline):
     model = PartidaDominio
     extra = 0
@@ -332,6 +341,19 @@ class ProfesionalAdmin(admin.ModelAdmin):
     actions_on_bottom = True
     save_on_top = True
 admin.site.register(Profesional, ProfesionalAdmin)
+class PresupuestoAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields': [('expediente'), ('monto', 'fecha', 'porcentaje_cancelado'), ('obs')]}),
+    ]
+    inlines = [PagoInline]
+    list_display = ('expediente', 'monto', 'fecha', 'obs')
+    list_filter = ['expediente__id']
+    search_fields = ['expediente__id']
+    actions_on_bottom = True
+    date_hierarchy = 'fecha'
+    list_per_page = 20
+    save_on_top = True
+admin.site.register(Presupuesto, PresupuestoAdmin)
 admin.site.register(Titulo)
 class ZonaAdmin(admin.ModelAdmin):
     list_display = ('id', 'descripcion')
