@@ -2,7 +2,7 @@
 -- Name: plpgsql; Type: EXTENSION; 
 --
 
-CREATE EXTENSION IF NOT EXISTS plpgsqlg;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
 
 
 --
