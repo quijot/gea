@@ -56,24 +56,54 @@ BEGIN
         ds_id := (SELECT ds FROM sd WHERE id=NEW.sd);
         ds_ds := (SELECT ds FROM ds WHERE id=ds_id);
         dp_dp := (SELECT dp FROM ds WHERE id=ds_id);
-        UPDATE partida SET api = (SELECT dvapi(dp_dp, ds_ds, sd_sd, NEW.pii, NEW.subpii)) WHERE pii = NEW.pii AND subpii = NEW.subpii;
+        NEW.api = (SELECT dvapi(dp_dp, ds_ds, sd_sd, NEW.pii, NEW.subpii));
     END IF;
-    RETURN NULL;
+    RETURN NEW;
 END;
 $$;
-
-
---
--- Name: dvapi_insert; Type: TRIGGER;
---
-
-CREATE TRIGGER dvapi_insert AFTER INSERT ON partida FOR EACH ROW EXECUTE PROCEDURE update_dvapi();
 
 
 --
 -- Name: dvapi_update; Type: TRIGGER;
 --
 
-CREATE TRIGGER dvapi_update AFTER UPDATE OF sd, pii, subpii ON partida FOR EACH ROW EXECUTE PROCEDURE update_dvapi();
+CREATE TRIGGER dvapi_update
+    BEFORE INSERT OR UPDATE OF sd, pii, subpii ON partida
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_dvapi();
 
+
+--
+-- Name: fix_nombres_apellidos(); Type: FUNCTION;
+--
+
+CREATE FUNCTION fix_nombres_apellidos() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (NEW.apellidos IS NOT NULL) THEN
+        NEW.apellidos = upper(NEW.apellidos);
+    END IF;
+    IF (NEW.apellidos_alternativos IS NOT NULL) THEN
+        NEW.apellidos_alternativos = upper(NEW.apellidos_alternativos);
+    END IF;
+    IF (NEW.nombres IS NOT NULL) THEN
+        NEW.nombres = initcap(NEW.nombres);
+    END IF;
+    IF (NEW.nombres_alternativos IS NOT NULL) THEN
+        NEW.nombres_alternativos = initcap(NEW.nombres_alternativos);
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: fix_nombres_apellidos; Type: TRIGGER;
+--
+
+CREATE TRIGGER fix_nombres_apellidos_trigger
+    BEFORE INSERT OR UPDATE OF nombres, apellidos, nombres_alternativos, apellidos_alternativos ON persona
+    FOR EACH ROW
+    EXECUTE PROCEDURE fix_nombres_apellidos();
 
