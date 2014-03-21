@@ -190,7 +190,7 @@ class DpAdmin(admin.ModelAdmin):
     save_on_top = True
 admin.site.register(Dp, DpAdmin)
 class DsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'dp', 'ds', 'nombre')
+    list_display = ('id', 'dp', 'distrito', 'nombre')
     #list_editable = ('nombre',)
     list_filter = ['dp', 'dp__nombre']
     search_fields = ['dp__nombre', 'ds', 'nombre']
@@ -198,10 +198,10 @@ class DsAdmin(admin.ModelAdmin):
     save_on_top = True
 admin.site.register(Ds, DsAdmin)
 class SdAdmin(admin.ModelAdmin):
-    list_display = ('id', 'ds', 'sd', 'nombre')
+    list_display = ('id', 'dp', 'ds', 'subdistrito', 'dp_nombre', 'ds_nombre', 'nombre')
     #list_editable = ('nombre',)
     list_filter = ['ds__dp', 'ds__dp__nombre', 'ds', 'ds__nombre']
-    search_fields = ['ds__nombre', 'sd', 'nombre', 'ds__dp__nombre']
+    search_fields = ['ds__dp__nombre', 'ds__nombre', 'sd', 'nombre']
     actions_on_bottom = True
     save_on_top = True
 admin.site.register(Sd, SdAdmin)
@@ -305,6 +305,7 @@ class PartidaAdmin(admin.ModelAdmin):
         (None, {'fields': [('sd', 'pii', 'subpii', 'api')]}),
     ]
     inlines = [PartidaDominioInline]
+    #list_display = ('id', 'sd', 'pii', 'subpii', 'api')
     list_filter = ['sd__ds__dp__nombre']
     search_fields = ['pii', 'sd__nombre', 'sd__ds__nombre', 'sd__ds__dp__nombre']
     actions_on_bottom = True

@@ -170,13 +170,36 @@ class Ds(models.Model):
     ds = models.IntegerField()
     nombre = CharNullField(max_length=50, verbose_name='nombre distrito')
     def distrito(self):
-        return '%02d %s' % (self.ds, self.nombre)
+        return '%02d' % (self.ds)
     class Meta:
         db_table = 'ds'
         verbose_name_plural = 'distritos'
         ordering = ['dp', 'ds']
     def __unicode__(self):
         return '%02d' % self.ds
+
+class Sd(models.Model):
+    id = models.AutoField(primary_key=True)
+    ds = models.ForeignKey(Ds, db_column='ds')
+    sd = models.IntegerField()
+    nombre = CharNullField(max_length=50, null = True, blank=True, default = None, verbose_name='nombre subdistrito')
+    def subdistrito(self):
+        return '%02d' % (self.sd)
+    def dp(self):
+        return self.ds.dp
+    dp.short_description = 'Dp'
+    def dp_nombre(self):
+        return self.ds.dp.nombre
+    dp_nombre.short_description = 'Dp nombre'
+    def ds_nombre(self):
+        return self.ds.nombre
+    ds_nombre.short_description = 'Ds nombre'
+    class Meta:
+        db_table = 'sd'
+        verbose_name_plural = 'subdistritos'
+        ordering = ['ds', 'sd']
+    def __unicode__(self):
+        return '%s%s%02d' % (self.ds.dp, self.ds, self.sd)
 
 class Expediente(models.Model):
     MENSURAS = ((1, 1),(2, 2),(3, 3),(4, 4))
@@ -354,18 +377,6 @@ class Profesional(models.Model):
         ordering = ['apellidos', 'nombres']
     def __unicode__(self):
         return '%s %s' % (self.apellidos, self.nombres)
-
-class Sd(models.Model):
-    id = models.AutoField(primary_key=True)
-    ds = models.ForeignKey(Ds, db_column='ds')
-    sd = models.IntegerField()
-    nombre = CharNullField(max_length=50, null = True, blank=True, default = None, verbose_name='nombre subdistrito')
-    class Meta:
-        db_table = 'sd'
-        verbose_name_plural = 'subdistritos'
-        ordering = ['ds', 'sd']
-    def __unicode__(self):
-        return '%s%s%02d' % (self.ds.dp, self.ds, self.sd)
 
 class Titulo(models.Model):
     id = models.AutoField(primary_key=True)
