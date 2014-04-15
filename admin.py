@@ -122,8 +122,8 @@ class TienePlanoFilter(admin.SimpleListFilter):
             return queryset.filter(Q(plano_ruta__isnull=True) | Q(plano_ruta__exact=''))
 
 # Personas
-class CantidadDeExpedientesFilter(admin.SimpleListFilter):
-    title = _('cantidad de expedientes')
+class CantidadDeExpedientesPorPersonaFilter(admin.SimpleListFilter):
+    title = _('cantidad de expedientes por persona')
     parameter_name = 'expedientes'
     def lookups(self, request, model_admin):
         return (
@@ -149,6 +149,36 @@ class CantidadDeExpedientesFilter(admin.SimpleListFilter):
             return qs
         if self.value() == '4+':
             qs = qs.filter(entry_count__gt=3)
+            return qs
+
+# Objetos
+class CantidadDeExpedientesPorObjetoFilter(admin.SimpleListFilter):
+    title = _('cantidad de expedientes por objeto')
+    parameter_name = 'expedientes'
+    def lookups(self, request, model_admin):
+        return (
+            ('0', _('Ninguno')),
+            ('10', _('entre 1 y 10')),
+            ('50', _('entre 10 y 50')),
+            ('100', _('entre 50 y 100')),
+            ('100+', _('100 o +')),
+        )
+    def queryset(self, request, queryset):
+        qs = queryset.annotate(entry_count=Count('expedienteobjeto'))
+        if self.value() == '0':
+            qs = qs.filter(entry_count=0)
+            return qs
+        if self.value() == '10':
+            qs = qs.filter(entry_count__gte=1).filter(entry_count__lt=10)
+            return qs
+        if self.value() == '50':
+            qs = qs.filter(entry_count__gte=10).filter(entry_count__lt=50)
+            return qs
+        if self.value() == '100':
+            qs = qs.filter(entry_count__gte=50).filter(entry_count__lt=100)
+            return qs
+        if self.value() == '100+':
+            qs = qs.filter(entry_count__gte=100)
             return qs
 
 class AntecedenteAdmin(admin.ModelAdmin):
@@ -292,6 +322,8 @@ class LugarAdmin(admin.ModelAdmin):
     save_on_top = True
 admin.site.register(Lugar, LugarAdmin)
 class ObjetoAdmin(admin.ModelAdmin):
+    inlines = [ExpedienteObjetoInline]
+    list_filter = [CantidadDeExpedientesPorObjetoFilter]
     search_fields = ['nombre']
     actions_on_bottom = True
     save_on_top = True
@@ -323,7 +355,7 @@ class PersonaAdmin(admin.ModelAdmin):
     inlines = [ExpedientePersonaInline]
     list_display = ('nombre_completo', 'domicilio', 'lugar', 'telefono', 'celular', 'email', 'cuit_cuil')
     #list_editable = ('domicilio', 'lugar', 'telefono', 'celular', 'email', 'cuit_cuil')
-    list_filter = [CantidadDeExpedientesFilter, 'lugar']
+    list_filter = [CantidadDeExpedientesPorPersonaFilter, 'lugar']
     search_fields = ['nombres', 'apellidos', 'nombres_alternativos', 'apellidos_alternativos', 'domicilio', 'telefono', 'celular', 'email', 'cuit_cuil', 'expedientepersona__expediente__id']
     actions_on_bottom = True
     save_on_top = True
