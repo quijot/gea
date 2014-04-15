@@ -37,8 +37,16 @@ apt-get install postgresql postgresql-contrib postgresql-client python-psycopg2 
 
 Para instalar [Grappelli](http://grappelliproject.com/):
 
+Pueden instalar la _original_
+
 ```bash
-$ pip install django-grappelli==2.5.1
+$ pip install django-grappelli==2.5.3
+```
+
+o [la modificada por mi](http://github.com/quijot/django-grappelli) (para que se vean los enlaces URLField, porque Grappelli, en su minimalismo fanático, los oculta):
+
+```bash
+$ sudo pip install -e git+git://github.com/quijot/django-grappelli.git#egg=django-grappelli
 ```
 
 ### grappelli-nested-inlines
