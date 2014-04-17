@@ -9,10 +9,12 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 ## Requisitos previos
 
 - GNU/Linux
-- Python
-- Django 1.6
-- PostgreSQL
-- [Grappelli](http://grappelliproject.com/) 2.5.1 (opcional)
+- Python 2.7.x
+- Django 1.6.x
+- Apache 2.4.x
+- mod_wsgi
+- PostgreSQL 9.1
+- [Grappelli](http://grappelliproject.com/) 2.5.4 (opcional)
   - [grappelli-nested-inlines](https://github.com/quijot/grappelli-nested-inlines) (opcional para ver formularios anidados, requiere Grappelli)
 
 ### Python
@@ -24,13 +26,23 @@ Python 2.7 preferentemente.
 Para instalar [Django](https://www.djangoproject.com/):
 
 ```bash
-$ pip install Django==1.6
+$ sudo pip install Django
+```
+
+### Apache
+
+No sé che... Buscar en DuckDuckGo o algo así.
+
+### mod_wgsi:
+
+```bash
+$ sudo apt-get install libapache2-mod-wsgi
 ```
 
 ### PostgreSQL
 
 ```bash
-apt-get install postgresql postgresql-contrib postgresql-client python-psycopg2 postgresql-plpython-9.1
+sudo apt-get install postgresql postgresql-contrib postgresql-client python-psycopg2 postgresql-plpython-9.1
 ```
 
 ### Grappelli
@@ -40,7 +52,7 @@ Para instalar [Grappelli](http://grappelliproject.com/):
 Pueden instalar la _original_
 
 ```bash
-$ pip install django-grappelli==2.5.3
+$ sudo pip install django-grappelli==2.5.3
 ```
 
 o [la modificada por mi](http://github.com/quijot/django-grappelli) (para que se vean los enlaces URLField, porque Grappelli, en su minimalismo fanático, los oculta):
@@ -61,12 +73,12 @@ $ pip install -e git+git://github.com/quijot/grappelli-nested-inlines.git#egg=gr
 
 ### Crear proyecto Django y base de datos PostgreSQL
 
+Vas a necesitar un superuser de postgresql. [Acá](http://stackoverflow.com/questions/1471571/how-to-configure-postgresql-for-the-first-time) explica bastante bien cómo hacerlo.
+
 ```bash
 $ django-admin.py startproject estudio
 $ cd estudio
-$ # si no tenés un superuser de postgresql
-$ createuser pgsuperuser (o leer [esto](http://stackoverflow.com/questions/1471571/how-to-configure-postgresql-for-the-first-time))
-$ # responder "yes" cuando pregunte si queremos que sea superuser
+$ # si no tenés un superuser de postgresql, crealo ahora
 $ createdb gea
 ```
 
@@ -81,7 +93,7 @@ $ unzip master.zip
 $ mv gea-master gea
 ```
 
-o clonar (requiere git -> ```$ apt-get install git```):
+o clonar (requiere git -> ```$ sudo apt-get install git```):
 
 ```bash
 $ # dentro de "estudio"
@@ -168,42 +180,30 @@ Supongamos que elegimos el nombre __gea.net__.
 ### Editar httpd.conf para configurar el daemon de wsgi
 
 ```bash
-$ sudo vim /etc/apache2/httpd.conf
+$ sudo vim /etc/apache2/sites-available/ebox-gea.net.conf
 ```
 
-Luego escribir esto dentro, para usar ```wsgi``` como daemon. Reemplazar _user_ y _path-to-estudio_ con lo que corresponda.
+Luego, para poder usar ```wsgi``` como daemon, pegar las siguientes directivas entre **DocumentRoot** y **ErrorLog**.
+Reemplazar _<path-to-estudio>_ con lo que corresponda.
 
 ```bash
-WSGIDaemonProcess gea.net python-path=/path-to-estudio
+WGIDaemonProcess gea.net python-path=/<path-to-estudio>
 WSGIProcessGroup gea.net
+WSGIScriptAlias / /<path-to-estudio>/estudio/wsgi.py
 
-WSGIScriptAlias / /path-to-estudio/estudio/wsgi.py
-WSGIPythonPath /path-to-estudio
-
-<Directory /path-to-estudio/estudio>
+<Directory /<path-to-estudio>/estudio>
 <Files wsgi.py>
-Order deny,allow
-Allow from all
+Require all granted
 </Files>
 </Directory>
-```
 
-### Crear un alias para static en user-ebox-gea.net
+Alias /static/ /<path-to-estudio>/
 
-```bash
-$ sudo vim /etc/apache2/sites-available/user-ebox-gea.net/static.alias
-```
-
-Y escribir esto dentro...
-
-```bash
-Alias /static/ /path-to-estudio/
-
-<Directory /path-to-estudio>
-Order deny,allow
-Allow from all
+<Directory /<path-to-estudio>>
+Require all granted
 </Directory>
 ```
+
 
 ### Usar __gea__ en Zentyal
 
