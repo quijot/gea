@@ -65,7 +65,7 @@ $ pip install -e git+git://github.com/quijot/grappelli-nested-inlines.git#egg=gr
 $ django-admin.py startproject estudio
 $ cd estudio
 $ # si no tenés un superuser de postgresql
-$ createuser pgsuperuser
+$ createuser pgsuperuser (o leer [esto](http://stackoverflow.com/questions/1471571/how-to-configure-postgresql-for-the-first-time))
 $ # responder "yes" cuando pregunte si queremos que sea superuser
 $ createdb gea
 ```
