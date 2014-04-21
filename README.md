@@ -187,17 +187,18 @@ Luego, para poder usar ```wsgi``` como daemon, pegar las siguientes directivas e
 Reemplazar _<path-to-estudio>_ con lo que corresponda.
 
 ```bash
-Alias /static/ /<path-to-estudio>/
-
-<Directory /<path-to-estudio>>
+# static files
+Alias /static/ /<path-to-estudio>/static/
+<Directory /<path-to-estudio>/static>
 Require all granted
 </Directory>
 
+# wsgi as daemon
 WSGIDaemonProcess gea.net python-path=/<path-to-estudio>
 WSGIProcessGroup gea.net
 
+# wsgi script alias and location
 WSGIScriptAlias / /<path-to-estudio>/estudio/wsgi.py
-
 <Directory /<path-to-estudio>/estudio>
 <Files wsgi.py>
 Require all granted
