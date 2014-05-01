@@ -177,14 +177,15 @@ Office -> Servidor Web -> Hosts virtuales -> Añadir nuevo
 
 Supongamos que elegimos el nombre __gea.net__.
 
-### Editar httpd.conf para configurar el daemon de wsgi
+### Configurar wsgi
+
+Crear un archivo que se incluirá en la configuración del VirtualHost.
 
 ```bash
-$ sudo vim /etc/apache2/sites-available/ebox-gea.net.conf
+$ sudo vim /etc/apache2/sites-available/user-ebox-gea.net/extra.conf
 ```
 
-Luego, para poder usar ```wsgi``` como daemon, pegar las siguientes directivas entre **DocumentRoot** y **ErrorLog**.
-Reemplazar _<path-to-estudio>_ con lo que corresponda.
+Pegar dentro las siguientes directivas, reemplazando _<path-to-estudio>_ con lo que corresponda. El objetivo poder usar ```wsgi``` como daemon.
 
 ```bash
 # static files
