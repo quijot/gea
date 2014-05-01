@@ -248,6 +248,7 @@ class ExpedientePartida(models.Model):
     id = models.AutoField(primary_key=True)
     expediente = models.ForeignKey(Expediente)
     partida = models.ForeignKey('Partida')
+    set_ruta = URLNullField(max_length=100, null=True, blank=True, default=None)    
     class Meta:
         db_table = 'expediente_partida'
         verbose_name_plural = 'expedientes_partidas'

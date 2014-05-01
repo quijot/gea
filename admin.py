@@ -307,10 +307,17 @@ admin.site.register(ExpedienteLugar, ExpedienteLugarAdmin)
 #admin.site.register(ExpedienteObjeto)
 class ExpedientePartidaAdmin(admin.ModelAdmin):
     inlines = [CatastroInline]
-    list_display = ('expediente', 'partida')
+    list_display = ('expediente', 'partida', 'show_set_ruta')
     search_fields = ['expediente__id', 'partida__pii']
     list_select_related = True
     list_per_page = 20
+    def show_set_ruta(self, obj):
+        if obj.set_ruta != '' and obj.set_ruta != None:
+            return '<a href="%s">%s</a>' % (obj.set_ruta, obj.partida)
+        else:
+            return obj.set_ruta
+    show_set_ruta.allow_tags = True
+    show_set_ruta.short_description = 'Set de Datos'
 admin.site.register(ExpedientePartida, ExpedientePartidaAdmin)
 #admin.site.register(ExpedientePersona)
 #admin.site.register(ExpedienteProfesional)
