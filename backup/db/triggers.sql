@@ -1,4 +1,4 @@
---
+﻿--
 -- Name: plpgsql; Type: EXTENSION; 
 --
 
@@ -82,16 +82,16 @@ CREATE FUNCTION fix_nombres_apellidos() RETURNS trigger
     AS $$
 BEGIN
     IF (NEW.apellidos IS NOT NULL) THEN
-        NEW.apellidos = upper(NEW.apellidos);
+        NEW.apellidos := upper(NEW.apellidos);
     END IF;
     IF (NEW.apellidos_alternativos IS NOT NULL) THEN
-        NEW.apellidos_alternativos = upper(NEW.apellidos_alternativos);
+        NEW.apellidos_alternativos := upper(NEW.apellidos_alternativos);
     END IF;
     IF (NEW.nombres IS NOT NULL) THEN
-        NEW.nombres = initcap(NEW.nombres);
+        NEW.nombres := initcap(NEW.nombres);
     END IF;
     IF (NEW.nombres_alternativos IS NOT NULL) THEN
-        NEW.nombres_alternativos = initcap(NEW.nombres_alternativos);
+        NEW.nombres_alternativos := initcap(NEW.nombres_alternativos);
     END IF;
     RETURN NEW;
 END;
@@ -107,3 +107,33 @@ CREATE TRIGGER fix_nombres_apellidos_trigger
     FOR EACH ROW
     EXECUTE PROCEDURE fix_nombres_apellidos();
 
+
+--
+-- Name: complete_antecedente(); Type: FUNCTION;
+--
+
+CREATE FUNCTION complete_antecedente() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (NEW.expediente_modificado_id IS NOT NULL AND NEW.inscripcion_numero IS NULL) THEN
+        NEW.inscripcion_numero := (SELECT inscripcion_numero FROM expediente WHERE id = NEW.expediente_modificado_id);
+        NEW.duplicado := (SELECT duplicado FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+        NEW.plano_ruta := (SELECT plano_ruta FROM expediente WHERE id = NEW.expediente_modificado_id);
+    ELSIF (NEW.expediente_modificado_id IS NULL AND NEW.inscripcion_numero IS NOT NULL) THEN
+        NEW.expediente_modificado_id := (SELECT id FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+        NEW.plano_ruta := (SELECT plano_ruta FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: complete_antecedente; Type: TRIGGER;
+--
+
+CREATE TRIGGER complete_antecedente_trigger
+    BEFORE INSERT OR UPDATE OF expediente_modificado_id, inscripcion_numero, duplicado ON antecedente
+    FOR EACH ROW
+    EXECUTE PROCEDURE complete_antecedente();
