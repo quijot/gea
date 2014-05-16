@@ -115,14 +115,22 @@ CREATE TRIGGER fix_nombres_apellidos_trigger
 CREATE FUNCTION complete_antecedente() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    pr varchar(100);
 BEGIN
     IF (NEW.expediente_modificado_id IS NOT NULL AND NEW.inscripcion_numero IS NULL) THEN
         NEW.inscripcion_numero := (SELECT inscripcion_numero FROM expediente WHERE id = NEW.expediente_modificado_id);
         NEW.duplicado := (SELECT duplicado FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
-        NEW.plano_ruta := (SELECT plano_ruta FROM expediente WHERE id = NEW.expediente_modificado_id);
+        pr := (SELECT plano_ruta FROM expediente WHERE id = NEW.expediente_modificado_id);
+        IF (pr IS NOT NULL) THEN
+            NEW.plano_ruta := pr;
+        END IF;
     ELSIF (NEW.expediente_modificado_id IS NULL AND NEW.inscripcion_numero IS NOT NULL) THEN
         NEW.expediente_modificado_id := (SELECT id FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
-        NEW.plano_ruta := (SELECT plano_ruta FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+        pr := (SELECT plano_ruta FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+        IF (pr IS NOT NULL) THEN
+            NEW.plano_ruta := pr;
+        END IF;
     END IF;
     RETURN NEW;
 END;
