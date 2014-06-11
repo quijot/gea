@@ -10,6 +10,10 @@ from gea.models import Antecedente, Catastro, CatastroLocal, Circunscripcion, Co
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Count, Q
 
+import unicodedata
+def strip_accents(s):
+   return u''.join(c for c in unicodedata.normalize('NFD', s)
+                  if unicodedata.category(c) != 'Mn')
 
 #
 # Custom Filters
@@ -196,6 +200,7 @@ class AntecedenteAdmin(admin.ModelAdmin):
             return obj.plano_ruta
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
+    show_plano_ruta.admin_order_field = 'plano_ruta'
 admin.site.register(Antecedente, AntecedenteAdmin)
 #admin.site.register(Catastro)
 # class CatastroLocalAdmin(admin.ModelAdmin):
@@ -294,6 +299,7 @@ class ExpedienteAdmin(NestedModelAdmin):
             return obj.plano_ruta
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
+    show_plano_ruta.admin_order_field = 'plano_ruta'
 admin.site.register(Expediente, ExpedienteAdmin)
 class ExpedienteLugarAdmin(admin.ModelAdmin):
     inlines = [CatastroLocalInline]
@@ -318,6 +324,7 @@ class ExpedientePartidaAdmin(admin.ModelAdmin):
             return obj.set_ruta
     show_set_ruta.allow_tags = True
     show_set_ruta.short_description = 'Set de Datos'
+    show_set_ruta.admin_order_field = 'set_ruta'
 admin.site.register(ExpedientePartida, ExpedientePartidaAdmin)
 #admin.site.register(ExpedientePersona)
 #admin.site.register(ExpedienteProfesional)
@@ -360,12 +367,34 @@ class PersonaAdmin(admin.ModelAdmin):
         ('DNI/CUIT/CUIL/CDI', {'fields': ['cuit_cuil']}),
     ]
     inlines = [ExpedientePersonaInline]
-    list_display = ('nombre_completo', 'domicilio', 'lugar', 'telefono', 'celular', 'email', 'cuit_cuil')
+    list_display = ('nombre_completo', 'domicilio', 'lugar', 'show_telefono', 'celular', 'email', 'show_cuit')
     #list_editable = ('domicilio', 'lugar', 'telefono', 'celular', 'email', 'cuit_cuil')
     list_filter = [CantidadDeExpedientesPorPersonaFilter, 'lugar']
     search_fields = ['nombres', 'apellidos', 'nombres_alternativos', 'apellidos_alternativos', 'domicilio', 'telefono', 'celular', 'email', 'cuit_cuil', 'expedientepersona__expediente__id']
     actions_on_bottom = True
     save_on_top = True
+    def show_telefono(self, obj):
+        if obj.telefono == '' or obj.telefono == None:
+            if obj.nombres == '' or obj.nombres == None:
+                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s/santa-fe">buscar</a>' % strip_accents(obj.apellidos.replace('.',''))
+            else:
+                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s-%s/santa-fe">buscar</a>' % (strip_accents(obj.nombres.split(' ')[0].replace('.','')), strip_accents(obj.apellidos.split(' ')[0].replace('.','')))
+        else:
+            return obj.telefono
+    show_telefono.allow_tags = True
+    show_telefono.short_description = 'Telefono'
+    show_telefono.admin_order_field = 'telefono'
+    def show_cuit(self, obj):
+        if obj.cuit_cuil == '' or obj.cuit_cuil == None:
+            nombre = strip_accents(obj.nombres.replace('.',''))
+            apellido = strip_accents(obj.apellidos.replace('.','').replace(' SA','').replace(' SRL','').replace(' SCC','').replace(' SACIFI','').replace(' SH','').replace(' HNOS',''))
+            return '<a href="http://www.cuitonline.com/search.php?q=%s+%s">buscar</a>' % (nombre, apellido)
+        else:
+            cuit_cuil = obj.cuit_cuil.replace('-','')
+            return '<a href="http://www.cuitonline.com/constancia/inscripcion/%s">%s</a>' % (cuit_cuil, obj.cuit_cuil)
+    show_cuit.allow_tags = True
+    show_cuit.short_description = 'DNI/CUIT/CUIL/CDI'
+    show_cuit.admin_order_field = 'cuit_cuil'
 admin.site.register(Persona, PersonaAdmin)
 class ProfesionalAdmin(admin.ModelAdmin):
     fieldsets = [
