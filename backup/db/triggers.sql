@@ -119,13 +119,17 @@ DECLARE
     pr varchar(100);
 BEGIN
     IF (NEW.expediente_modificado_id IS NOT NULL AND NEW.inscripcion_numero IS NULL) THEN
+    -- si ingresan "expediente_id" y NO ingresan "inscripcion_numero"
+        -- completa "inscripcion_numero"
         NEW.inscripcion_numero := (SELECT inscripcion_numero FROM expediente WHERE id = NEW.expediente_modificado_id);
-        NEW.duplicado := (SELECT duplicado FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
+        -- completa "duplicado"
+        NEW.duplicado := (SELECT duplicado FROM expediente WHERE id = NEW.expediente_modificado_id);
         pr := (SELECT plano_ruta FROM expediente WHERE id = NEW.expediente_modificado_id);
         IF (pr IS NOT NULL) THEN
             NEW.plano_ruta := pr;
         END IF;
     ELSIF (NEW.expediente_modificado_id IS NULL AND NEW.inscripcion_numero IS NOT NULL) THEN
+    -- si ingresan "inscripcion_numero" y NO ingresan "expediente_id"
         NEW.expediente_modificado_id := (SELECT id FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
         pr := (SELECT plano_ruta FROM expediente WHERE inscripcion_numero = NEW.inscripcion_numero);
         IF (pr IS NOT NULL) THEN
