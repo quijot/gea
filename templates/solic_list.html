@@ -1,0 +1,98 @@
+{% block content %}
+{% if cl %}
+  {% for e in cl %}
+    <div class="header">
+      <table style="border: no-border; border-collapse: collapse; width: 100%">
+        <tr>
+          <td>
+            <b>ALBERTO PESTARINI</b><br />
+            <b>Agrimensor</b> ICoPA Nº 1-0014-5<br />
+            <a href="http://www.pestarini.com.ar">www.pestarini.com.ar</a>
+          </td>
+          <td align="right">
+            (03404) 431206<br />
+            San Martín 430 1º piso<br/>
+            2252 Gálvez – Santa Fe
+          </td>
+        </tr>
+      </table>
+      <hr class="header"/>
+    </div>
+    <br><br><br><br>
+    <div class="document">
+      <div class="line-block">
+        <div class="line">Sr. Jefe de la Dirección de Topocartografía</div>
+        <div class="line">SERVICIO de CATASTRO e INFORMACIÓN TERRITORIAL</div>
+        <div class="line">SANTA FE</div>
+        <hr width="30%" align="left">
+      </div>
+      <p>De nuestra mayor consideración:</p>
+      <p>Quienes suscriben,
+      {% if e.expedientepersona_set %}
+        {% for ep in e.expedientepersona_set.all %}
+          {% if ep.propietario %}
+            <a href="/admin/gea/persona/{{ ep.persona.id }}/"><strong>
+            {% if ep.sucesion %}Sucesores de {% endif %}
+            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}
+            </strong></a>, 
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      patrocinados por el Agrimensor Alberto PESTARINI I.Co.P.A. Nº 1-0014, SOLICITAN la inscripción del Plano de
+      {% if e.expedienteobjeto_set %}
+        {% for ep in e.expedienteobjeto_set.all %}
+          <strong>{{ ep.objeto.nombre.upper }}</strong>
+        {% endfor %}
+      {% endif %}
+      que se acompaña.</p>
+      <p>Se adjuntan original y copias del plano, fotocopias de los títulos, set de datos, etc.</p>
+      <p>El inmueble está ubicado en
+      {% if e.expedientelugar_set %}
+        {% for ep in e.expedientelugar_set.all %}
+          <a href="/admin/gea/lugar/{{ ep.lugar.id }}/"><strong>{{ ep.lugar.nombre }}</strong></a>, 
+        {% endfor %}
+      {% endif %}
+      {% if e.expedientepartida_set %}
+        {% for ep in e.expedientepartida_set.all %}
+          {% with ep.partida as p %}
+          Distrito <strong>{{ p.sd.ds.nombre }}</strong>, 
+          Departamento <strong>{{ p.sd.ds.dp.nombre|upper }}</strong>, 
+          Partida de Impuesto Inmobiliario
+          <strong>
+          {{ p.sd.ds.dp.dp|stringformat:"02d" }}-{{ p.sd.ds.ds|stringformat:"02d" }}-{{ p.sd.sd|stringformat:"02d" }}-{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}-{{ p.api }}-
+          </strong>,
+          {% endwith %}
+          {% if ep.catastro_set %}
+            {% for c in ep.catastro_set.all %}
+              Zona <strong>{{ c.zona.descripcion }}</strong>,
+              {% if c.seccion %}Sección <strong>{{ c.seccion }}</strong>, {% endif %}
+              {% if c.poligono %}Polígono <strong>{{ c.poligono }}</strong>, {% endif %}
+              {% if c.manzana %}Manzana <strong>{{ c.manzana }}</strong>, {% endif %}
+              {% if c.parcela %}Parcela <strong>{{ c.parcela }}</strong>, {% endif %}
+              Sub-parcela {% if c.subparcela %}<strong>{{ c.subparcela }}</strong>{% else %} -- {% endif %}.</p>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      <p>Los propietarios firman al pie de la presente, fijando su DOMICILIO FISCAL en <strong>GRAL. URQUIZA 137</strong> de la Localidad <strong>GÁLVEZ</strong>, Código Postal 2252, Provincia de <strong>SANTA FE</strong>.</p>
+      <p>Saludamos muy atentamente.</p>
+    </div>    
+  {% endfor %}
+  <hr class="footer"/>
+  <div class="pagination">
+    <span class="step-links">
+      {% if cl.has_previous %}
+        <a href="?page={{ cl.previous_page_number }}">anterior</a>
+      {% endif %}
+      <span class="current">
+        {{ cl.number }} / {{ cl.paginator.num_pages }}
+      </span>
+      {% if cl.has_next %}
+        <a href="?page={{ cl.next_page_number }}">siguiente</a>
+      {% endif %}
+    </span>
+  </div>    
+{% else %}
+  <p>No hay expedientes.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}</title>
+    {% block stylesheets %}
+    <style>
+     body { max-width:90%; margin: 1em 0 0 4em; font-size: 11pt }
+     .encabezado, .encabezado a { color: #999 }
+     p { text-align: justify }
+     p.sangria { text-indent: 20% }
+     a { color: black; text-decoration: none; border-bottom: 1px solid black }
+     a:visited { text-decoration:none }
+     a:hover { color: #4fb2d3 }
+     table { border: no-border; border-collapse: collapse; width: 100%}
+     th, td { border-bottom: 1px solid black !important }
+    </style>
+    {% endblock %}
+  </head>
+  <body>
+    {% block encabezado %}
+    <div class="encabezado">
+      <table>
+        <tr>
+          <td>
+            <strong><em>ALBERTO PESTARINI</em></strong><br />
+            <strong>Agrimensor</strong> ICoPA Nº 1.0014.5<br />
+            <a href="http://www.pestarini.com.ar">www.pestarini.com.ar</a>
+          </td>
+          <td align="right">
+            (03404) 431206<br />
+            San Martín 430 1º piso<br/>
+            2252 Gálvez – Santa Fe
+          </td>
+        </tr>
+      </table>
+    </div>
+    {% endblock %}
+    {% block content %}
+        {{ content }}
+    {% endblock %}
+  </body>
+</html>

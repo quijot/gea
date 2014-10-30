@@ -1,0 +1,16 @@
+{% extends "nota.html" %}
+
+{% block title %}Presupuesto {{ persona }}{% endblock %}
+
+{% block content %}
+<br /><br /><br />
+<div align="right">Gálvez, {% now 'j \d\e F, Y' %}</div>
+<h1>Presupuesto por {{ objeto }}</h1>
+<h2>Comitente</h2>
+<ul>
+  <li>Nombre: {{ persona }}
+  <li>CUIT Nº: 20-28567999-1
+  <li>Teléfono: 15490705
+  <li>Correo: leandro622@hotmail.com
+</ul>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "nota.html" %}
+
+{% block title %}{% if e %}Visaci&oacute;n {{ e.id }}{% endif %}{% endblock %}
+
+
+{% block content %}
+{% if e %}
+  {% if e.expedientelugar_set %}
+    {% for el in e.expedientelugar_set.all %}
+        <br /><br /><br />
+        <div align="right">Gálvez, {% now 'j \d\e F, Y' %}</div>
+        <div>
+          <div>
+            <div>{{ sr }}</div>
+            <div>{{ localidad }}</div>
+            <div><u>S&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;D</u></div>
+          </div>
+          <p>De mi mayor consideración:</p>
+          <p class="sangria">El que suscribe, <strong>Agrimensor Alberto PESTARINI</strong>, SOLICITA la visación del Plano de
+          {% if e.expedienteobjeto_set %}
+            {% for ep in e.expedienteobjeto_set.all %}
+              <strong>{{ ep.objeto.nombre.upper }}</strong>
+            {% endfor %}
+          {% endif %}
+          de la propiedad de
+          {% if e.expedientepersona_set %}
+            {% for ep in e.expedientepersona_set.all %}
+              {% if ep.propietario %}
+                <strong>{% if ep.sucesion %}Sucesores de {% endif %}{{ ep.persona.nombres }} {{ ep.persona.apellidos }}</strong>,
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          ubicada en su distrito: {{ el.lugar.nombre }}
+          {% if el.catastrolocal_set %}
+            {% for c in el.catastrolocal_set.all %}
+              ({{ c }})
+            {% endfor %}
+          {% endif %}.</p>
+          <p class="sangria">Se adjuntan dos copias del plano.</p>
+          <p class="sangria">Sin más, saludo a UD. muy atte.</p>
+        </div>
+    {% endfor %}
+  {% endif %}
+{% endif %}
+{% endblock %}

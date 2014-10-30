@@ -1,0 +1,97 @@
+{% extends "nota.html" %}
+
+{% block title %}{% if e %}Solicitud {{ e.id }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if e %}
+    <br />
+    <div style="float: right; font-size: smaller"><em>Expte. <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</em></a></div>
+    <br />
+    <div>
+      <div>
+        <div>Sr. Jefe de la Dirección de Topocartografía</div>
+        <div>SERVICIO de CATASTRO e INFORMACIÓN TERRITORIAL</div>
+        <div>SANTA FE</div>
+        <hr width="30%" align="left">
+      </div>
+      <p>De nuestra mayor consideración:</p>
+      <p class="sangria">{% if e.propietarios_count > 1 %}Quienes suscriben,{% else %}Quien suscribe,{% endif %}
+      {% if e.expedientepersona_set %}
+        {% for ep in e.expedientepersona_set.all %}
+          {% if ep.propietario %}
+            <a href="/admin/gea/persona/{{ ep.persona.id }}/"><strong>
+            {% if ep.sucesion %}Sucesores de {% endif %}
+            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}</strong></a>,
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {% if e.propietarios_count > 1 %}patrocinados{% else %}patrocinado{% endif %} por
+      {% if e.expedienteprofesional_set %}
+        {% for ep in e.expedienteprofesional_set.all %}
+          {{ ep.profesional.titulo }} {{ ep.profesional.nombres }} {{ ep.profesional.apellidos }} I.Co.P.A. Nº {{ ep.profesional.icopa }},
+        {% endfor %}
+      {% endif %}
+      {% if e.propietarios_count > 1 %}SOLICITAN{% else %}SOLICITA{% endif %} la inscripción del Plano
+      {% if e.expedienteobjeto_set %}
+        {% for ep in e.expedienteobjeto_set.all %}
+          de <a href="/admin/gea/objeto/{{ ep.objeto.id }}/"><strong>{{ ep.objeto.nombre.upper }}</strong></a>,
+        {% endfor %}
+      {% endif %}
+      que se acompaña.</p>
+      <p class="sangria">Se adjuntan original y copias del plano, fotocopias de los títulos, set de datos, etc.</p>
+      <p class="sangria">{% if e.expedientepartida_set.count > 1 %}Los inmuebles mensurados están ubicados en{% else %}El inmueble mensurado está ubicado en{% endif %}
+      {% if e.expedientelugar_set %}
+        {% for ep in e.expedientelugar_set.all %}
+          <a href="/admin/gea/lugar/{{ ep.lugar.id }}/"><strong>{{ ep.lugar.nombre }}</strong></a>:
+        {% endfor %}
+      {% endif %}
+      {% if e.expedientepartida_set %}
+        <ul>
+        {% for ep in e.expedientepartida_set.all %}
+          {% with ep.partida as p %}<li>
+          Distrito <a href="/admin/gea/ds/{{ p.sd.ds.id }}/"><strong>{{ p.sd.ds.nombre }}</strong></a>,
+          Depto. <a href="/admin/gea/dp/{{ p.sd.ds.dp }}/"><strong>{{ p.sd.ds.dp.nombre|upper }}</strong></a>,
+          Partida de Impuesto Inmobiliario
+          <a href="/admin/gea/partida/{{ p.id }}/"><strong>{{ p.sd.ds.dp.dp|stringformat:"02d" }}-{{ p.sd.ds.ds|stringformat:"02d" }}-{{ p.sd.sd|stringformat:"02d" }}-{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}-{{ p.api }}-</strong></a>,
+          {% endwith %}
+          {% if ep.catastro_set %}
+            {% for c in ep.catastro_set.all %}
+              {% if c.zona %}Zona <a href="/admin/gea/zona/{{ c.zona.id }}/"><strong>{% if c.zona.id == 1 %}U{% elif c.zona.id > 3 %}R{% else %}S{% endif %}</strong></a>,{% endif %}
+              {% if c.seccion %}Sección <a href="/admin/gea/catastro/?seccion={{ c.seccion }}"><strong>{{ c.seccion }}</strong></a>, {% endif %}
+              {% if c.poligono %}Polígono <a href="/admin/gea/catastro/?poligono={{ c.poligono }}"><strong>{{ c.poligono }}</strong></a>, {% endif %}
+              {% if c.manzana %}Manzana <a href="/admin/gea/catastro/?manzana={{ c.manzana }}"><strong>{{ c.manzana }}</strong></a>, {% endif %}
+              {% if c.parcela %}Parcela <a href="/admin/gea/catastro/?parcela={{ c.parcela }}"><strong>{{ c.parcela }}</strong></a>, {% endif %}
+              Sub-parcela {% if c.subparcela %}<a href="/admin/gea/catastro/?subparcela={{ c.subparcela }}"><strong>{{ c.subparcela }}</strong></a>{% else %} -- {% endif %}.</p>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        </ul>
+      {% endif %}
+      <p class="sangria">{% if e.propietarios_count > 1 %}Las personas antes nombradas firman{% else %}La persona antes nombrada firma{% endif %} al pie de la presente, fijando su DOMICILIO FISCAL en <strong>{{ domfiscal.upper }}</strong> de la Localidad <strong>{{ localidad }}</strong>, Código Postal <strong>{{ cp }}</strong>, Provincia de <strong>SANTA FE</strong>.</p>
+      <p class="sangria">Saludamos muy atentamente.</p>
+      <br /><br />
+      <table>
+        <tr>
+          <th width="30%">Firma</th>
+          <th>Nombre</th>
+          <th>Tipo y Nº Doc.</th>
+          <th>CUIT/CUIL/CDI</th>
+        </tr>
+        {% if e.expedientepersona_set %}
+          {% for ep in e.expedientepersona_set.all %}
+            {% if ep.propietario %}
+              <tr height="80px">
+                <td></td>
+                <td>{{ ep.persona.apellidos }}<br />{{ ep.persona.nombres }}</td>
+                <td>{% if ep.persona.show_tipo_doc %}{{ ep.persona.show_tipo_doc }}: {{ ep.persona.documento }}{% endif %}</td>
+                <td align="right">{{ ep.persona.cuit_cuil }}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </table>
+    </div>    
+{% else %}
+  <p>No existe el expediente.</p>
+{% endif %}
+{% endblock %}

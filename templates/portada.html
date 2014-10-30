@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}GEA | Gesti&oacute;n de Expedientes de Agrimensores{% endblock %}
+
+{% block content %}
+
+<header id="grp-content-title">
+  <header><h1>Tareas comunes</h1></header>
+</header>
+
+<div class="grp-module" id="app_auth">
+  <h2>GENERAR NOTAS</h2>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/solicitud"><strong>Solicitud de Inscripción para SCIT</strong></a>
+<!--    <ul class="grp-actions">
+      <li class="grp-add-link"><a href="/admin/auth/group/add/">Agregar</a></li>
+      <li class="grp-change-link"><a href="/admin/auth/group/">Modificar</a></li>
+    </ul>-->
+  </div>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/visacion"><strong>Visación Comunal / Municipal</strong></a>
+  </div>
+</div>
+
+<div class="grp-module" id="app_auth">
+  <h2>BUSCAR</h2>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/plano_form"><strong>Plano x Nº de Inscripción</strong></a>
+  </div>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/set_form"><strong>Set de Datos x Nº de Partida de Impuesto Inmubiliario</strong></a>
+  </div>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/catastro_form"><strong>Expedientes x Catastros Locales</strong></a>
+  </div>
+</div>
+
+<div class="grp-module" id="app_auth">
+  <h2>DÍGITO VERIFICADOR API</h2>
+  <div class="grp-row" id="model-group">
+    <a href="/gea/dvapi_form"><strong>Calcular D&iacute;gito Verificador</strong></a>
+  </div>
+</div>
+{% endblock %}
