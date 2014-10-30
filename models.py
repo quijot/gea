@@ -294,6 +294,10 @@ class Expediente(models.Model):
     def inscripto(self):
         return (inscripcion_numero != 0)
 
+    def propietarios_count(self):
+        """Devuelve la cantidad de personas que figuran como propietarias."""
+        return self.expedientepersona_set.filter(propietario=True).count()
+
     class Meta:
         db_table = 'expediente'
         ordering = ['-id']
@@ -449,26 +453,38 @@ class PartidaDominio(models.Model):
 
 class Persona(models.Model):
     id = models.AutoField(primary_key=True)
-    nombres = CharNullField(
-        max_length=100, null=True, blank=True, default=None)
+    nombres = CharNullField(max_length=100, null=True, blank=True,
+                            default=None)
     apellidos = CharNullField(max_length=100)
-    nombres_alternativos = CharNullField(
-        max_length=100, null=True, blank=True, default=None)
-    apellidos_alternativos = CharNullField(
-        max_length=100, null=True, blank=True, default=None)
-    domicilio = CharNullField(
-        max_length=50, null=True, blank=True, default=None)
+    nombres_alternativos = CharNullField(max_length=100, null=True, blank=True,
+                                         default=None)
+    apellidos_alternativos = CharNullField(max_length=100, null=True,
+                                           blank=True, default=None)
+    domicilio = CharNullField(max_length=50, null=True, blank=True,
+                              default=None)
     lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
-    telefono = CharNullField(
-        max_length=20, null=True, blank=True, default=None)
+    telefono = CharNullField(max_length=20, null=True, blank=True,
+                             default=None)
     celular = CharNullField(max_length=20, null=True, blank=True, default=None)
-    email = EmailNullField(
-        max_length=50, unique=True, null=True, blank=True, default=None)
+    email = EmailNullField(max_length=50, unique=True, null=True, blank=True,
+                           default=None)
     cuit_cuil = CharNullField(max_length=14, unique=True, null=True,
-                              blank=True, default=None, verbose_name='DNI/CUIT/CUIL/CDI')
+                              blank=True, default=None,
+                              verbose_name='CUIT/CUIL/CDI')
+    TIPO_DOC = ((0, 'DNI'), (1, 'LC'), (2, 'LE'), (3, 'Otro'))
+    tipo_doc = models.SmallIntegerField(null=True, blank=True,
+                                        choices=TIPO_DOC, default=None)
+    documento = models.IntegerField(max_length=8, unique=True, null=True,
+                                    blank=True, default=None)
 
     def nombre_completo(self):
         return '%s %s' % (self.apellidos, self.nombres)
+
+    def show_tipo_doc(self):
+        if self.tipo_doc != '' and self.tipo_doc != None:
+            return self.TIPO_DOC[self.tipo_doc][1]
+    show_tipo_doc.short_description = 'Tipo doc'
+    show_tipo_doc.admin_order_field = 'tipo_doc'
 
     class Meta:
         db_table = 'persona'
