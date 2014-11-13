@@ -33,7 +33,7 @@
           ubicada en su distrito: {{ el.lugar.nombre }}
           {% if el.catastrolocal_set %}
             {% for c in el.catastrolocal_set.all %}
-              ({{ c }})
+              ({{ c }}{% if c.suburbana %}, Zona Suburbana{% endif %}{% if forloop.last %}){% else %}, {% endif %}
             {% endfor %}
           {% endif %}.</p>
           <p class="sangria">Se adjuntan dos copias del plano.</p>

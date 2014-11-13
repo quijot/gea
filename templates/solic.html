@@ -21,7 +21,7 @@
           {% if ep.propietario %}
             <a href="/admin/gea/persona/{{ ep.persona.id }}/"><strong>
             {% if ep.sucesion %}Sucesores de {% endif %}
-            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}</strong></a>,
+            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}{% if ep.sucesion %} (*){% endif %}</strong></a>,
           {% endif %}
         {% endfor %}
       {% endif %}
@@ -42,7 +42,7 @@
       <p class="sangria">{% if e.expedientepartida_set.count > 1 %}Los inmuebles mensurados están ubicados en{% else %}El inmueble mensurado está ubicado en{% endif %}
       {% if e.expedientelugar_set %}
         {% for ep in e.expedientelugar_set.all %}
-          <a href="/admin/gea/lugar/{{ ep.lugar.id }}/"><strong>{{ ep.lugar.nombre }}</strong></a>:
+          {% if forloop.last and e.expedientelugar_set.count > 1 %} y {% elif not forloop.first %}, {% endif %}<a href="/admin/gea/lugar/{{ ep.lugar.id }}/"><strong>{{ ep.lugar.nombre }}</strong></a>{% if forloop.last %}:{% endif %}
         {% endfor %}
       {% endif %}
       {% if e.expedientepartida_set %}
@@ -79,13 +79,15 @@
         </tr>
         {% if e.expedientepersona_set %}
           {% for ep in e.expedientepersona_set.all %}
-            {% if ep.propietario %}
+            {% if ep.propietario or ep.sucesor %}
+            {% if not ep.sucesion %}
               <tr height="80px">
                 <td></td>
-                <td>{{ ep.persona.apellidos }}<br />{{ ep.persona.nombres }}</td>
-                <td>{% if ep.persona.show_tipo_doc %}{{ ep.persona.show_tipo_doc }}: {{ ep.persona.documento }}{% endif %}</td>
+                <td>{{ ep.persona.apellidos }}<br />{{ ep.persona.nombres }}<br />{% if ep.partes_indivisas_propias %}<small>({{ ep.partes_indivisas_propias }}/{{ ep.partes_indivisas_total }} partes indivisas)</small>{% endif %}</td>
+                <td>{% if ep.persona.documento %}{% if ep.persona.show_tipo_doc %}{{ ep.persona.show_tipo_doc }}: {% endif %}{{ ep.persona.documento }}{% endif %}</td>
                 <td align="right">{{ ep.persona.cuit_cuil }}</td>
               </tr>
+            {% endif %}
             {% endif %}
           {% endfor %}
         {% endif %}
