@@ -363,6 +363,7 @@ class ExpedientePersona(models.Model):
     comitente = models.BooleanField(default=False)
     propietario = models.BooleanField(default=True)
     poseedor = models.BooleanField(default=False)
+    sucesor = models.BooleanField(default=False)
     partes_indivisas_propias = models.IntegerField(
         null=True, blank=True, default=None)
     partes_indivisas_total = models.IntegerField(
