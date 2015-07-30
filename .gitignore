@@ -4,6 +4,6 @@
 local_settings.py
 
 backup/db/*.gz
-bakcup/files
-bakcup/files/*.gz
-bakcup/sql
+backup/files
+backup/files/*.gz
+backup/sql
