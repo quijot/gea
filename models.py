@@ -1,11 +1,3 @@
-# This is an auto-generated Django model module.
-# You'll have to do the following manually to clean this up:
-#     * Rearrange models' order
-#     * Make sure each model has one field with primary_key=True
-# Feel free to rename the models, but don't rename db_table values or field names.
-#
-# Also note: You'll have to insert the output of 'django-admin.py sqlcustom [appname]'
-# into your database.
 from __future__ import unicode_literals
 
 from django.db import models
@@ -22,14 +14,14 @@ class CharNullField(models.CharField):  # subclass the CharField
         if isinstance(value, models.CharField):
             return value
         if value == None:  # if the db has a NULL (==None in Python)
-            return ""  # convert it into the Django-friendly '' string
+            return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
 
     # catches value right before sending to db
     def get_prep_value(self, value):
         # if Django tries to save '' string, send the db None (NULL)
-        if value == "":
+        if value == u'':
             return None
         else:
             return value  # otherwise, just pass the value
@@ -46,14 +38,14 @@ class URLNullField(models.URLField):  # subclass the URLField
         if isinstance(value, models.URLField):
             return value
         if value == None:  # if the db has a NULL (==None in Python)
-            return ""  # convert it into the Django-friendly '' string
+            return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
 
     # catches value right before sending to db
     def get_prep_value(self, value):
         # if Django tries to save '' string, send the db None (NULL)
-        if value == "":
+        if value == u'':
             return None
         else:
             return value  # otherwise, just pass the value
@@ -70,14 +62,14 @@ class EmailNullField(models.EmailField):  # subclass the EmailField
         if isinstance(value, models.EmailField):
             return value
         if value == None:  # if the db has a NULL (==None in Python)
-            return ""  # convert it into the Django-friendly '' string
+            return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
 
     # catches value right before sending to db
     def get_prep_value(self, value):
         # if Django tries to save '' string, send the db None (NULL)
-        if value == "":
+        if value == u'':
             return None
         else:
             return value  # otherwise, just pass the value
@@ -88,7 +80,8 @@ class Antecedente(models.Model):
     expediente = models.ForeignKey(
         'Expediente', null=True, blank=True, default=None)
     expediente_modificado = models.ForeignKey(
-        'Expediente', null=True, blank=True, default=None, related_name='expediente_modificado')
+        'Expediente', null=True, blank=True, default=None, 
+        related_name='expediente_modificado')
     inscripcion_numero = models.IntegerField(
         null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
@@ -116,13 +109,13 @@ class Catastro(models.Model):
     class Meta:
         db_table = 'catastro'
 
-    def __unicode__(self):
+    def __str__(self):
         if str(self.zona) in ('1', '2', '3'):
-            return 'Z:%s - S:%s - M:%s - P:%s' % (self.zona, self.seccion, self.manzana, self.parcela)
+            return u''.join(('Z:',str(self.zona),' - S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela)).encode('utf-8')
         elif str(self.zona) in ('4', '5'):
-            return 'Z:%s - Pol:%s - P:%s' % (self.zona, self.poligono, self.parcela)
+            return u''.join(('Z:',str(self.zona),' - Pol:',self.poligono,' - P:',self.parcela)).encode('utf-8')
         else:
-            return ''
+            return u''
 
 
 class CatastroLocal(models.Model):
@@ -141,8 +134,8 @@ class CatastroLocal(models.Model):
         db_table = 'catastro_local'
         verbose_name_plural = 'catastros_locales'
 
-    def __unicode__(self):
-        return 'S:%s - M:%s - P:%s' % (self.seccion, self.manzana, self.parcela)
+    def __str__(self):
+        return u''.join(('S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela)).encode('utf-8')
 
 
 class Circunscripcion(models.Model):
@@ -155,7 +148,7 @@ class Circunscripcion(models.Model):
         ordering = ['id']
         verbose_name_plural = 'circunscripciones'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -166,7 +159,7 @@ class Comprobante(models.Model):
     class Meta:
         db_table = 'comprobante'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -181,9 +174,11 @@ class Presupuesto(models.Model):
 
     class Meta:
         db_table = 'presupuesto'
+        ordering = ['expediente']
 
-    def __unicode__(self):
-        return '%s - $%s - %s' % (self.expediente, str(self.monto), str(self.fecha))
+    def __str__(self):
+        return u'%s - $%s - %s'.encode('utf-8') % (self.expediente, str(self.monto), 
+        str(self.fecha))
 
 
 class Pago(models.Model):
@@ -199,8 +194,8 @@ class Pago(models.Model):
     class Meta:
         db_table = 'pago'
 
-    def __unicode__(self):
-        return '%s%% - %s' % (str(self.porcentaje), str(self.fecha))
+    def __str__(self):
+        return u'%s%% - %s'.encode('utf-8') % (str(self.porcentaje), str(self.fecha))
 
 
 class Dp(models.Model):
@@ -212,15 +207,15 @@ class Dp(models.Model):
     circunscripcion = models.ForeignKey(Circunscripcion)
 
     def departamento(self):
-        return '%02d %s' % (self.dp, self.nombre)
+        return u'%02d %s'.encode('utf-8') % (self.dp, self.nombre)
 
     class Meta:
         db_table = 'dp'
         verbose_name_plural = 'Departamentos'
         ordering = ['dp']
 
-    def __unicode__(self):
-        return '%02d' % self.dp
+    def __str__(self):
+        return u'%02d'.encode('utf-8') % self.dp
 
 
 class Ds(models.Model):
@@ -237,8 +232,8 @@ class Ds(models.Model):
         verbose_name_plural = 'distritos'
         ordering = ['dp', 'ds']
 
-    def __unicode__(self):
-        return '%02d' % self.ds
+    def __str__(self):
+        return u'%02d'.encode('utf-8') % self.ds
 
 
 class Sd(models.Model):
@@ -246,7 +241,8 @@ class Sd(models.Model):
     ds = models.ForeignKey(Ds, db_column='ds')
     sd = models.IntegerField()
     nombre = CharNullField(
-        max_length=50, null=True, blank=True, default=None, verbose_name='nombre subdistrito')
+        max_length=50, null=True, blank=True, default=None, 
+        verbose_name='nombre subdistrito')
 
     def subdistrito(self):
         return '%02d' % (self.sd)
@@ -268,8 +264,8 @@ class Sd(models.Model):
         verbose_name_plural = 'subdistritos'
         ordering = ['ds', 'sd']
 
-    def __unicode__(self):
-        return '%s%s%02d' % (self.ds.dp, self.ds, self.sd)
+    def __str__(self):
+        return u'%s%s%02d'.encode('utf-8') % (self.ds.dp, self.ds, self.sd)
 
 
 class Expediente(models.Model):
@@ -277,7 +273,8 @@ class Expediente(models.Model):
     id = models.IntegerField(primary_key=True)
     fecha_plano = models.DateField(null=True, blank=True, default=None)
     mensuras = models.SmallIntegerField(
-        null=True, blank=True, choices=MENSURAS, default=1, verbose_name='cantidad de mensuras')
+        null=True, blank=True, choices=MENSURAS, default=1, 
+        verbose_name='cantidad de mensuras')
     inscripcion_numero = models.IntegerField(
         unique=True, null=True, blank=True, default=None)
     inscripcion_fecha = models.DateField(null=True, blank=True, default=None)
@@ -302,7 +299,7 @@ class Expediente(models.Model):
         db_table = 'expediente'
         ordering = ['-id']
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.id)
 
 
@@ -313,11 +310,11 @@ class ExpedienteLugar(models.Model):
 
     class Meta:
         db_table = 'expediente_lugar'
-        verbose_name_plural = 'expedientes_lugares'
-        ordering = ['expediente']
+        verbose_name_plural = 'expediente_lugares'
+        ordering = ['expediente', 'lugar']
 
-    def __unicode__(self):
-        return str(self.expediente)
+    def __str__(self):
+        return str(self.lugar)
 
 
 class ExpedienteObjeto(models.Model):
@@ -330,7 +327,11 @@ class ExpedienteObjeto(models.Model):
 
     class Meta:
         db_table = 'expediente_objeto'
-        verbose_name_plural = 'expedientes_objetos'
+        verbose_name_plural = 'expediente_objetos'
+        ordering = ['expediente', 'objeto']
+
+    def __str__(self):
+        return str(self.objeto)
 
 
 class ExpedientePartida(models.Model):
@@ -342,11 +343,12 @@ class ExpedientePartida(models.Model):
 
     class Meta:
         db_table = 'expediente_partida'
-        verbose_name_plural = 'expedientes_partidas'
-        ordering = ['expediente']
+        verbose_name_plural = 'expediente_partidas'
+        ordering = ['expediente', 'partida']
 
-    def __unicode__(self):
-        return '%s - %s' % (str(self.expediente), self.partida)
+    def __str__(self):
+        return u'%s'.encode('utf-8') % (self.partida)
+        #return u'%s - %s'.encode('utf-8') % (str(self.expediente), self.partida)
 
 
 class ExpedientePersona(models.Model):
@@ -374,9 +376,12 @@ class ExpedientePersona(models.Model):
 
     class Meta:
         db_table = 'expediente_persona'
-        verbose_name_plural = 'expedientes_personas'
+        verbose_name_plural = 'expediente_personas'
         ordering = [
             'mensura', 'item', 'persona__apellidos', 'persona__nombres']
+
+    def __str__(self):
+       return u'%s %s'.encode('utf-8') % (self.persona.apellidos, self.persona.nombres)
 
 
 class ExpedienteProfesional(models.Model):
@@ -386,7 +391,11 @@ class ExpedienteProfesional(models.Model):
 
     class Meta:
         db_table = 'expediente_profesional'
-        verbose_name_plural = 'expedientes_profesionales'
+        verbose_name_plural = 'expediente_profesionales'
+        ordering = ['profesional__apellidos', 'profesional__nombres']
+
+    def __str__(self):
+        return u'%s %s'.encode('utf-8') % (self.profesional.apellidos, self.profesional.nombres)
 
 
 class Lugar(models.Model):
@@ -399,8 +408,8 @@ class Lugar(models.Model):
         verbose_name_plural = 'lugares'
         ordering = ['nombre']
 
-    def __unicode__(self):
-        return self.nombre
+    def __str__(self):
+        return unicode(self.nombre).encode('utf-8')
 
 
 class Objeto(models.Model):
@@ -411,8 +420,8 @@ class Objeto(models.Model):
         db_table = 'objeto'
         ordering = ['nombre']
 
-    def __unicode__(self):
-        return self.nombre
+    def __str__(self):
+        return unicode(self.nombre).encode('utf-8')
 
 
 class Partida(models.Model):
@@ -431,8 +440,8 @@ class Partida(models.Model):
         unique_together = (('pii', 'subpii'))
         ordering = ['pii', 'subpii']
 
-    def __unicode__(self):
-        return '%06d/%04d-%d' % (self.pii, self.subpii, self.api)
+    def __str__(self):
+        return u'%06d/%04d-%d'.encode('utf-8') % (self.pii, self.subpii, self.api)
 
 
 class PartidaDominio(models.Model):
@@ -454,32 +463,30 @@ class PartidaDominio(models.Model):
 
 class Persona(models.Model):
     id = models.AutoField(primary_key=True)
-    nombres = CharNullField(max_length=100, null=True, blank=True,
-                            default=None)
+    nombres = CharNullField(max_length=100, null=True, blank=True, default=None)
     apellidos = CharNullField(max_length=100)
-    nombres_alternativos = CharNullField(max_length=100, null=True, blank=True,
-                                         default=None)
-    apellidos_alternativos = CharNullField(max_length=100, null=True,
-                                           blank=True, default=None)
-    domicilio = CharNullField(max_length=50, null=True, blank=True,
-                              default=None)
+    nombres_alternativos = CharNullField(
+        max_length=100, null=True, blank=True, default=None)
+    apellidos_alternativos = CharNullField(
+        max_length=100, null=True, blank=True, default=None)
+    domicilio = CharNullField(
+        max_length=50, null=True, blank=True, default=None)
     lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
-    telefono = CharNullField(max_length=20, null=True, blank=True,
-                             default=None)
+    telefono = CharNullField(max_length=20, null=True, blank=True, default=None)
     celular = CharNullField(max_length=20, null=True, blank=True, default=None)
-    email = EmailNullField(max_length=50, unique=True, null=True, blank=True,
-                           default=None)
-    cuit_cuil = CharNullField(max_length=14, unique=True, null=True,
-                              blank=True, default=None,
-                              verbose_name='CUIT/CUIL/CDI')
+    email = EmailNullField(
+        max_length=50, unique=True, null=True, blank=True, default=None)
+    cuit_cuil = CharNullField(
+        max_length=14, unique=True, null=True, blank=True, default=None, 
+        verbose_name='CUIT/CUIL/CDI')
     TIPO_DOC = ((0, 'DNI'), (1, 'LC'), (2, 'LE'), (3, 'Otro'))
-    tipo_doc = models.SmallIntegerField(null=True, blank=True,
-                                        choices=TIPO_DOC, default=None)
-    documento = models.IntegerField(max_length=8, unique=True, null=True,
-                                    blank=True, default=None)
+    tipo_doc = models.SmallIntegerField(
+        null=True, blank=True, choices=TIPO_DOC, default=None)
+    documento = models.IntegerField(
+        unique=True, null=True, blank=True, default=None)
 
     def nombre_completo(self):
-        return '%s %s' % (self.apellidos, self.nombres)
+        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
 
     def show_tipo_doc(self):
         if self.tipo_doc != '' and self.tipo_doc != None:
@@ -491,8 +498,8 @@ class Persona(models.Model):
         db_table = 'persona'
         ordering = ['apellidos', 'nombres']
 
-    def __unicode__(self):
-        return '%s %s' % (self.apellidos, self.nombres)
+    def __str__(self):
+        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
 
 
 class Profesional(models.Model):
@@ -510,22 +517,23 @@ class Profesional(models.Model):
     web = URLNullField(max_length=50, null=True, blank=True, default=None)
     email = EmailNullField(
         max_length=50, unique=True, null=True, blank=True, default=None)
-    cuit_cuil = CharNullField(max_length=14, unique=True, null=True,
-                              blank=True, default=None, verbose_name='DNI/CUIT/CUIL/CDI')
+    cuit_cuil = CharNullField(
+        max_length=14, unique=True, null=True, blank=True, default=None, 
+        verbose_name='DNI/CUIT/CUIL/CDI')
     habilitado = models.BooleanField(default=True)
     jubilado = models.BooleanField(default=False)
     fallecido = models.BooleanField(default=False)
 
     def nombre_completo(self):
-        return '%s %s' % (self.apellidos, self.nombres)
+        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
 
     class Meta:
         db_table = 'profesional'
         verbose_name_plural = 'profesionales'
         ordering = ['apellidos', 'nombres']
 
-    def __unicode__(self):
-        return '%s %s' % (self.apellidos, self.nombres)
+    def __str__(self):
+        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
 
 
 class Titulo(models.Model):
@@ -536,8 +544,8 @@ class Titulo(models.Model):
         db_table = 'titulo'
         ordering = ['nombre']
 
-    def __unicode__(self):
-        return self.nombre
+    def __str__(self):
+        return unicode(self.nombre).encode('utf-8')
 
 
 class Zona(models.Model):
@@ -548,5 +556,5 @@ class Zona(models.Model):
         db_table = 'zona'
         ordering = ['id']
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.id)

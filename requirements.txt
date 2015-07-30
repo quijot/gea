@@ -1,0 +1,5 @@
+django==1.8.3
+django-grappelli==2.7.1
+django-nested-admin==2.1.0
+psycopg2==2.6.1
+

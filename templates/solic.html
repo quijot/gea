@@ -5,13 +5,15 @@
 {% block content %}
 {% if e %}
     <br />
-    <div style="float: right; font-size: smaller"><em>Expte. <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</em></a></div>
+    <div style="float: right; font-size: smaller">
+      <em>Expte. <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a></em>
+    </div>
     <br />
     <div>
       <div>
         <div>Sr. Jefe de la Dirección de Topocartografía</div>
         <div>SERVICIO de CATASTRO e INFORMACIÓN TERRITORIAL</div>
-        <div>SANTA FE</div>
+        <div>{{ circunscripcion }}</div>
         <hr width="30%" align="left">
       </div>
       <p>De nuestra mayor consideración:</p>
@@ -21,7 +23,7 @@
           {% if ep.propietario %}
             <a href="/admin/gea/persona/{{ ep.persona.id }}/"><strong>
             {% if ep.sucesion %}Sucesores de {% endif %}
-            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}{% if ep.sucesion %} (*){% endif %}</strong></a>,
+            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}{% if ep.sucesion %} (*){% endif %}{% if ep.nuda_propiedad %} (* nuda propiedad){% endif %}</strong></a>,
           {% endif %}
         {% endfor %}
       {% endif %}
@@ -67,7 +69,7 @@
         {% endfor %}
         </ul>
       {% endif %}
-      <p class="sangria">{% if e.propietarios_count > 1 %}Las personas antes nombradas firman{% else %}La persona antes nombrada firma{% endif %} al pie de la presente, fijando su DOMICILIO FISCAL en <strong>{{ domfiscal.upper }}</strong> de la Localidad <strong>{{ localidad }}</strong>, Código Postal <strong>{{ cp }}</strong>, Provincia de <strong>SANTA FE</strong>.</p>
+      <p class="sangria">{% if e.propietarios_count > 1 %}Las personas antes nombradas firman{% else %}La persona antes nombrada firma{% endif %} al pie de la presente, fijando su DOMICILIO FISCAL en <strong>{{ domfiscal.upper }}</strong> de la Localidad <strong>{{ localidad }}</strong>, Código Postal <strong>{{ cp }}</strong>, {% ifnotequal provincia 'CAPITAL FEDERAL' %}Provincia de <strong>{{ provincia }}</strong>{% else %}<strong>{{ provincia }}</strong>{% endifnotequal %}.</p>
       <p class="sangria">Saludamos muy atentamente.</p>
       <br /><br />
       <table>
@@ -92,6 +94,7 @@
           {% endfor %}
         {% endif %}
       </table>
+      {% if nota %}<p><strong>(*) {{ nota_titulo }}:</strong></p><p>{{ nota }}</p>{% endif %}
     </div>    
 {% else %}
   <p>No existe el expediente.</p>

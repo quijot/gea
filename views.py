@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
 
@@ -42,6 +43,7 @@ def listado_comun(request):
 # Solicitud de inscripcion SCIT
 #
 CP = (
+  (u"CABA", u"RECOLETA, CABA - C1119"),
   (u"22 DE MAYO", u"22 DE MAYO - S2124XAD"),
   (u"4 DE FEBRERO", u"4 DE FEBRERO - S2732XAA"),
   (u"AARÓN CASTELLANOS", u"AARÓN CASTELLANOS - S6106"),
@@ -986,10 +988,52 @@ CP = (
 
 CP_dict = dict(CP)
 
+PROV = (
+  (u'BUENOS AIRES', u'BUENOS AIRES'),
+  (u'CAPITAL FEDERAL', u'CAPITAL FEDERAL'),
+  (u'CATAMARCA', u'CATAMARCA'),
+  (u'CHACO', u'CHACO'),
+  (u'CHUBUT', u'CHUBUT'),
+  (u'CÓRDOBA', u'CÓRDOBA'),
+  (u'CORRIENTES', u'CORRIENTES'),
+  (u'ENTRE RÍOS', u'ENTRE RÍOS'),
+  (u'FORMOSA', u'FORMOSA'),
+  (u'JUJUY', u'JUJUY'),
+  (u'LA PAMPA', u'LA PAMPA'),
+  (u'LA RIOJA', u'LA RIOJA'),
+  (u'MENDOZA', u'MENDOZA'),
+  (u'MISIONES', u'MISIONES'),
+  (u'NEUQUÉN', u'NEUQUÉN'),
+  (u'RÍO NEGRO', u'RÍO NEGRO'),
+  (u'SALTA', u'SALTA'),
+  (u'SAN JUAN', u'SAN JUAN'),
+  (u'SAN LUIS', u'SAN LUIS'),
+  (u'SANTA CRUZ', u'SANTA CRUZ'),
+  (u'SANTA FE', u'SANTA FE'),
+  (u'SANTIAGO', u'SANTIAGO'),
+  (u'TIERRA DEL FUEGO', u'TIERRA DEL FUEGO'),
+  (u'TUCUMÁN', u'TUCUMÁN'),
+)
+
+CIRC = (
+  (u'SANTA FE', u'SANTA FE'),
+  (u'ROSARIO', u'ROSARIO'),
+)
+
+NOTA = (
+  (u'DECLARATORIA DE HEREDEROS', u'DECLARATORIA DE HEREDEROS'),
+  (u'CESIÓN DE DERECHOS', u'CESIÓN DE DERECHOS'),
+  (u'USUFRUCTO', u'USUFRUCTO'),
+)
+
 class SolicitudForm(forms.Form):
-    expte_nro = forms.IntegerField()
-    domicilio_fiscal = forms.CharField(max_length=40)
+    expte_nro = forms.IntegerField(widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
+    circunscripcion = forms.ChoiceField(choices=CIRC, initial=u'SANTA FE')
+    domicilio_fiscal = forms.CharField(max_length=40, widget=forms.TextInput(attrs={'placeholder': 'ej: San Martín 430'}))
     localidad = forms.ChoiceField(choices=CP, initial=u'GÁLVEZ')
+    provincia = forms.ChoiceField(choices=PROV, initial=u'SANTA FE')
+    nota_titulo = forms.ChoiceField(choices=NOTA, initial=u'DECLARATORIA DE HEREDEROS')
+    nota = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Ingrese el texto de la nota correspondiente'}), required=False)
 
 def solic(request):
     if request.method == 'POST': # If the form has been submitted...
@@ -999,19 +1043,27 @@ def solic(request):
             # Process the data in form.cleaned_data
             # ...
             expediente_id = form.cleaned_data['expte_nro']
+            circunscripcion = form.cleaned_data['circunscripcion']
             domicilio_fiscal = form.cleaned_data['domicilio_fiscal']
             #codigo_postal = form.cleaned_data['localidad']
             loc = form.cleaned_data['localidad']
             localidad = CP_dict[loc].split(' - ')[0]
             codigo_postal =  CP_dict[loc].split(' - ')[1]
+            provincia = form.cleaned_data['provincia']
+            nota_titulo = form.cleaned_data['nota_titulo']
+            nota = form.cleaned_data['nota']
 
             e = get_object_or_404(Expediente, id=expediente_id)
             template = loader.get_template('solic.html')
             context  = Context({
                 'e': e,
                 'domfiscal': domicilio_fiscal,
+                'circunscripcion': circunscripcion,
                 'localidad': localidad,
                 'cp': codigo_postal,
+                'provincia': provincia,
+                'nota_titulo': nota_titulo,
+                'nota': nota,
             })
             return HttpResponse(template.render(context))
     else:
@@ -1024,7 +1076,7 @@ def solic(request):
 #
 # Visacion Comunal/Municipal
 #
- 
+
 LUGAR = (
   (0,  u'GÁLVEZ'),
   (1,  u'AROCENA'),
@@ -1053,6 +1105,7 @@ LUGAR = (
   (24, u'SAN MARIANO'),
   (25, u'SAN MARTÍN DE LAS ESCOBAS'),
   (26, u'SANTA CLARA DE BUENA VISTA'),
+  (27, u'CENTENO'),
 )
 
 Lugar_dict = {
@@ -1083,6 +1136,7 @@ Lugar_dict = {
   24: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN MARIANO'),
   25: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN MARTÍN DE LAS ESCOBAS'),
   26: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SANTA CLARA DE BUENA VISTA'),
+  27: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO CENTENO'),
 }
 
 class VisacionForm(forms.Form):

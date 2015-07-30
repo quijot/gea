@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.conf.urls import patterns, include, url
 
 from gea import views
@@ -17,6 +16,8 @@ urlpatterns = patterns('',
     url(r'^set/$', views.set),
     url(r'^catastro/$', views.catastro),
     url(r'^dvapi/$', views.dvapi),
-    url(r'^presup/(?P<persona>(\w|\s|,|.|-|_)*)/(?P<objeto>(\w|\s|,|.|-|_)*)$', views.presup),
+    url(
+       r'^presup/(?P<persona>(\w|\s|,|.|-|_)*)/(?P<objeto>(\w|\s|,|.|-|_)*)$',
+       views.presup),
     url(r'^presup_form/$', views.presup_form),
 )

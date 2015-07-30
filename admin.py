@@ -1,5 +1,5 @@
 from django.contrib import admin
-from grappelli_nested.admin import NestedModelAdmin, NestedStackedInline, NestedTabularInline
+from nested_admin import NestedAdmin, NestedStackedInline
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response, RequestContext
 from django.contrib.admin import helpers
@@ -90,9 +90,13 @@ class TieneOrdenPendienteFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'si':
-            return queryset.filter(orden_numero__isnull=False, inscripcion_numero__isnull=True)
+            return queryset.filter(
+                orden_numero__isnull=False,
+                inscripcion_numero__isnull=True)
         if self.value() == 'no':
-            return queryset.exclude(orden_numero__isnull=False, inscripcion_numero__isnull=True)
+            return queryset.exclude(
+                orden_numero__isnull=False,
+                inscripcion_numero__isnull=True)
 
 
 class TieneAntecedentesFilter(admin.SimpleListFilter):
@@ -144,7 +148,8 @@ class TienePlanoFilter(admin.SimpleListFilter):
             return queryset.exclude(plano_ruta__isnull=True)
         if self.value() == 'no':
             return queryset.exclude(plano_ruta__isnull=False)
-            #return queryset.filter(Q(plano_ruta__isnull=True) | Q(plano_ruta__exact=''))
+            # return queryset.filter(Q(plano_ruta__isnull=True) |
+            # Q(plano_ruta__exact=''))
 
 
 # Personas
@@ -214,10 +219,19 @@ class CantidadDeExpedientesPorObjetoFilter(admin.SimpleListFilter):
 
 
 class AntecedenteAdmin(admin.ModelAdmin):
-    list_display = ('expediente', 'expediente_modificado', 'inscripcion_numero',
-                    'duplicado', 'obs', 'plano_ruta')
-    list_editable = ('expediente_modificado', 'inscripcion_numero', 'duplicado',
-                     'obs', 'plano_ruta')
+    list_display = (
+        'expediente',
+        'expediente_modificado',
+        'inscripcion_numero',
+        'duplicado',
+        'obs',
+        'plano_ruta')
+    list_editable = (
+        'expediente_modificado',
+        'inscripcion_numero',
+        'duplicado',
+        'obs',
+        'plano_ruta')
     search_fields = ['expediente__id', 'expediente_modificado__id',
                      'inscripcion_numero', 'duplicado', 'obs']
     actions_on_bottom = True
@@ -238,23 +252,36 @@ admin.site.register(Antecedente, AntecedenteAdmin)
 
 
 class CatastroAdmin(admin.ModelAdmin):
-    list_filter = ['zona', 'seccion', 'poligono', 'manzana', 'parcela', 'subparcela']
-    search_fields = ['zona', 'seccion', 'poligono', 'manzana', 'parcela', 'subparcela']
+    list_filter = [
+        'zona', 'seccion', 'poligono', 'manzana', 'parcela', 'subparcela']
+    search_fields = [
+        'zona', 'seccion', 'poligono', 'manzana', 'parcela', 'subparcela']
     actions_on_bottom = True
     list_per_page = 20
     save_on_top = True
-    ordering = ['zona', 'seccion', 'poligono', 'manzana', 'parcela', 'subparcela']
+    ordering = ['zona', 'seccion', 'poligono',
+                'manzana', 'parcela', 'subparcela']
 admin.site.register(Catastro, CatastroAdmin)
 
 
-class CatastroLocalAdmin(admin.ModelAdmin):
-    list_display = ('seccion', 'manzana', 'parcela', 'subparcela', 'suburbana', 'poligono')
+class CatastroLocalAdmin(NestedAdmin):
+    list_display = (
+        'seccion', 'manzana', 'parcela', 'subparcela', 'suburbana', 'poligono')
     list_filter = ['seccion', 'manzana']
-    search_fields = ['seccion', 'manzana', 'parcela', 'subparcela', 'suburbana', 'poligono', 'expediente_lugar__expediente__id', 'expediente_lugar__lugar__nombre']
+    search_fields = [
+        'seccion',
+        'manzana',
+        'parcela',
+        'subparcela',
+        'suburbana',
+        'poligono',
+        'expediente_lugar__expediente__id',
+        'expediente_lugar__lugar__nombre']
     actions_on_bottom = True
     list_per_page = 20
     save_on_top = True
-    ordering = ['seccion', 'manzana', 'parcela', 'subparcela', 'suburbana', 'poligono']
+    ordering = ['seccion', 'manzana', 'parcela',
+                'subparcela', 'suburbana', 'poligono']
 admin.site.register(CatastroLocal, CatastroLocalAdmin)
 
 
@@ -304,12 +331,14 @@ class SdAdmin(admin.ModelAdmin):
 admin.site.register(Sd, SdAdmin)
 
 
+#class CatastroLocalInline(admin.StackedInline):
 class CatastroLocalInline(NestedStackedInline):
     model = CatastroLocal
     extra = 0
 
 
-class ExpedienteLugarInline(NestedTabularInline):
+#class ExpedienteLugarInline(admin.TabularInline):
+class ExpedienteLugarInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     #inline_classes = ('grp-collapse grp-closed',)
     model = ExpedienteLugar
@@ -317,20 +346,23 @@ class ExpedienteLugarInline(NestedTabularInline):
     inlines = [CatastroLocalInline]
 
 
-class ExpedienteObjetoInline(NestedTabularInline):
+#class ExpedienteObjetoInline(admin.TabularInline):
+class ExpedienteObjetoInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedienteObjeto
     extra = 0
 
 
-class ExpedientePersonaInline(NestedTabularInline):
+#class ExpedientePersonaInline(admin.TabularInline):
+class ExpedientePersonaInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedientePersona
     extra = 0
     ordering = ['-comitente']
 
 
-class ExpedienteProfesionalInline(NestedTabularInline):
+class ExpedienteProfesionalInline(admin.TabularInline):
+#class ExpedienteProfesionalInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedienteProfesional
     extra = 0
@@ -341,14 +373,14 @@ class CatastroInline(NestedStackedInline):
     extra = 0
 
 
-class ExpedientePartidaInline(NestedTabularInline):
+class ExpedientePartidaInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedientePartida
     extra = 0
     inlines = [CatastroInline]
 
 
-class AntecedenteInline(NestedTabularInline):
+class AntecedenteInline(admin.TabularInline):
     classes = ('grp-collapse grp-open',)
     model = Antecedente
     fk_name = 'expediente'
@@ -356,18 +388,18 @@ class AntecedenteInline(NestedTabularInline):
     ordering = ['-expediente_modificado', '-inscripcion_numero']
 
 
-class PagoInline(NestedTabularInline):
+class PagoInline(NestedStackedInline):
     model = Pago
     extra = 0
 
 
-class PresupuestoInline(NestedTabularInline):
+class PresupuestoInline(NestedStackedInline):
     model = Presupuesto
     extra = 0
     inlines = [PagoInline]
 
 
-class ExpedienteAdmin(NestedModelAdmin):
+class ExpedienteAdmin(NestedAdmin):
     fieldsets = [
         (None, {
             'fields': [('id', 'fecha_plano', 'mensuras')],
@@ -377,7 +409,7 @@ class ExpedienteAdmin(NestedModelAdmin):
             'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion')],
             'classes': ('extrapretty', 'grp-collapse grp-open',),
         }),
-        ('Colegio',  {
+        ('Colegio', {
             'fields': [('orden_numero', 'orden_fecha')],
             'classes': ('extrapretty', 'grp-collapse grp-open',),
         }),
@@ -386,12 +418,33 @@ class ExpedienteAdmin(NestedModelAdmin):
             'classes': ('extrapretty', 'grp-collapse grp-open',),
         }),
     ]
-    inlines = [ExpedienteLugarInline, ExpedienteObjetoInline, ExpedientePersonaInline,
-               ExpedienteProfesionalInline, ExpedientePartidaInline, AntecedenteInline]
-    list_display = ('id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'duplicado',
-                    'sin_inscripcion', 'orden_numero', 'orden_fecha', 'cancelado', 'show_plano_ruta')
-    list_editable = ('fecha_plano', 'inscripcion_numero', 'inscripcion_fecha',
-                     'duplicado', 'orden_numero', 'orden_fecha', 'sin_inscripcion', 'cancelado')
+    inlines = [
+        ExpedienteLugarInline,
+        ExpedienteObjetoInline,
+        ExpedientePersonaInline,
+        ExpedienteProfesionalInline,
+        ExpedientePartidaInline,
+        AntecedenteInline]
+    list_display = (
+        'id',
+        'fecha_plano',
+        'inscripcion_numero',
+        'inscripcion_fecha',
+        'duplicado',
+        'sin_inscripcion',
+        'orden_numero',
+        'orden_fecha',
+        'cancelado',
+        'show_plano_ruta')
+    list_editable = (
+        'fecha_plano',
+        'inscripcion_numero',
+        'inscripcion_fecha',
+        'duplicado',
+        'orden_numero',
+        'orden_fecha',
+        'sin_inscripcion',
+        'cancelado')
     list_filter = [InscriptoFilter, 'duplicado', 'sin_inscripcion',
                    TieneOrdenFilter, TieneOrdenPendienteFilter, 'cancelado',
                    'cancelado_por', TienePlanoFilter,
@@ -399,27 +452,52 @@ class ExpedienteAdmin(NestedModelAdmin):
                    'expedientelugar__catastrolocal__seccion',
                    'expedientelugar__catastrolocal__manzana',
                    'expedientelugar__catastrolocal__parcela',
+                   'expedientepersona__usufructo',
                    TieneObjetoFilter, TieneAntecedentesFilter]
-    search_fields = ['id', 'fecha_plano', 'inscripcion_numero', 'inscripcion_fecha', 'orden_numero', 'orden_fecha', 'cancelado_por', 'expedientelugar__lugar__nombre', 'expedientepersona__persona__apellidos', 'expedientepersona__persona__nombres', 'expedientepersona__persona__apellidos_alternativos', 'expedientepersona__persona__nombres_alternativos', 'expedienteprofesional__profesional__apellidos', 'expedienteobjeto__objeto__nombre', 'expedientepartida__partida__pii', 'antecedente__expediente_modificado__id', 'antecedente__inscripcion_numero']
+    search_fields = [
+        'id',
+        'fecha_plano',
+        'inscripcion_numero',
+        'inscripcion_fecha',
+        'orden_numero',
+        'orden_fecha',
+        'cancelado_por',
+        'expedientelugar__lugar__nombre',
+        'expedientepersona__persona__apellidos',
+        'expedientepersona__persona__nombres',
+        'expedientepersona__persona__apellidos_alternativos',
+        'expedientepersona__persona__nombres_alternativos',
+        'expedienteprofesional__profesional__apellidos',
+        'expedienteobjeto__objeto__nombre',
+        'expedientepartida__partida__pii',
+        'antecedente__expediente_modificado__id',
+        'antecedente__inscripcion_numero']
     actions_on_bottom = True
     date_hierarchy = 'inscripcion_fecha'
     list_per_page = 20
     save_on_top = True
 
     def show_plano_ruta(self, obj):
-        if obj.plano_ruta != '' and obj.plano_ruta != None:
-            return '<a href="%s">%s</a>' % (obj.plano_ruta, obj.inscripcion_numero)
+        if obj.plano_ruta != '' and obj.plano_ruta is not None:
+            return '<a href="%s">%s</a>' % (obj.plano_ruta,
+                                            obj.inscripcion_numero)
         else:
             return obj.plano_ruta
     show_plano_ruta.allow_tags = True
     show_plano_ruta.short_description = 'Plano'
     show_plano_ruta.admin_order_field = 'plano_ruta'
 
-    actions = ['solic',]
+    actions = ['solic', ]
+
     def solic(self, request, queryset):
         for obj in queryset:
             e = get_object_or_404(Expediente, id=obj.id)
-            return render_to_response('solic.html', {"e": e, "domfiscal": "__________________", "localidad": "__________________", "cp": "________"}, context_instance=RequestContext(request))
+            return render_to_response('solic.html',
+                                      {"e": e,
+                                       "domfiscal": "__________________",
+                                       "localidad": "__________________",
+                                       "cp": "________"},
+                                      context_instance=RequestContext(request))
     solic.short_description = "Generar Solicitud de inscripcion para SCIT"
 admin.site.register(Expediente, ExpedienteAdmin)
 
@@ -427,7 +505,8 @@ admin.site.register(Expediente, ExpedienteAdmin)
 class ExpedienteLugarAdmin(admin.ModelAdmin):
     inlines = [CatastroLocalInline]
     list_display = ('expediente', 'lugar')
-    list_filter = ['catastrolocal__seccion', 'catastrolocal__manzana', 'catastrolocal__parcela', 'lugar__nombre']
+    list_filter = ['catastrolocal__seccion', 'catastrolocal__manzana',
+                   'catastrolocal__parcela', 'lugar__nombre']
     search_fields = ['expediente__id', 'lugar__nombre']
     actions_on_bottom = True
     list_per_page = 20
@@ -444,7 +523,7 @@ class ExpedientePartidaAdmin(admin.ModelAdmin):
     list_per_page = 20
 
     def show_set_ruta(self, obj):
-        if obj.set_ruta != '' and obj.set_ruta != None:
+        if obj.set_ruta != '' and obj.set_ruta is not None:
             return '<a href="%s">%s</a>' % (obj.set_ruta, obj.partida)
         else:
             return obj.set_ruta
@@ -499,11 +578,15 @@ admin.site.register(Partida, PartidaAdmin)
 
 class PersonaAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None,                {'fields': [
-         ('apellidos', 'nombres'), ('apellidos_alternativos', 'nombres_alternativos')]}),
-        ('Contacto',          {
-         'fields': [('domicilio', 'lugar'), ('telefono', 'celular'), 'email']}),
-        ('DNI/CUIT/CUIL/CDI', {'fields': [('tipo_doc', 'documento'), 'cuit_cuil']}),
+        (None, {
+            'fields': [('apellidos', 'nombres'), ('apellidos_alternativos', 'nombres_alternativos')]
+        }),
+        ('Contacto', {
+            'fields': [('domicilio', 'lugar'), ('telefono', 'celular'), 'email']
+        }),
+        ('DNI/CUIT/CUIL/CDI', {
+            'fields': [('tipo_doc', 'documento'), 'cuit_cuil']
+        }),
     ]
     inlines = [ExpedientePersonaInline]
     list_display = ('nombre_completo', 'domicilio', 'lugar', 'show_telefono',
@@ -511,17 +594,36 @@ class PersonaAdmin(admin.ModelAdmin):
                     'show_cuit')
     #list_editable = ('domicilio', 'lugar', 'telefono', 'celular', 'email', 'cuit_cuil')
     list_filter = [CantidadDeExpedientesPorPersonaFilter, 'lugar']
-    search_fields = ['nombres', 'apellidos', 'nombres_alternativos', 'apellidos_alternativos',
-                     'domicilio', 'telefono', 'celular', 'email', 'cuit_cuil', 'expedientepersona__expediente__id']
+    search_fields = [
+        'nombres',
+        'apellidos',
+        'nombres_alternativos',
+        'apellidos_alternativos',
+        'domicilio',
+        'telefono',
+        'celular',
+        'email',
+        'cuit_cuil',
+        'expedientepersona__expediente__id']
     actions_on_bottom = True
     save_on_top = True
 
     def show_telefono(self, obj):
-        if obj.telefono == '' or obj.telefono == None:
-            if obj.nombres == '' or obj.nombres == None:
-                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s/santa-fe">buscar</a>' % strip_accents(obj.apellidos.replace('.', ''))
+        if obj.telefono == '' or obj.telefono is None:
+            if obj.nombres == '' or obj.nombres is None:
+                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s/santa-fe">buscar</a>' % strip_accents(
+                    obj.apellidos.replace(
+                        '.',
+                        ''))
             else:
-                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s-%s/santa-fe">buscar</a>' % (strip_accents(obj.nombres.split(' ')[0].replace('.', '')), strip_accents(obj.apellidos.split(' ')[0].replace('.', '')))
+                return '<a href="http://www.paginasblancas.com.ar/es-ar/persona/%s-%s/santa-fe">buscar</a>' % (strip_accents(
+                    obj.nombres.split(' ')[0].replace(
+                        '.',
+                        '')),
+                    strip_accents(
+                    obj.apellidos.split(' ')[0].replace(
+                        '.',
+                        '')))
         else:
             return obj.telefono
     show_telefono.allow_tags = True
@@ -529,14 +631,30 @@ class PersonaAdmin(admin.ModelAdmin):
     show_telefono.admin_order_field = 'telefono'
 
     def show_cuit(self, obj):
-        if obj.cuit_cuil == '' or obj.cuit_cuil == None:
+        if obj.cuit_cuil == '' or obj.cuit_cuil is None:
             nombre = strip_accents(obj.nombres.replace('.', ''))
-            apellido = strip_accents(obj.apellidos.replace('.', '').replace(' SA', '').replace(
-                ' SRL', '').replace(' SCC', '').replace(' SACIFI', '').replace(' SH', '').replace(' HNOS', ''))
-            return '<a href="http://www.cuitonline.com/search.php?q=%s+%s">buscar</a>' % (nombre, apellido)
+            apellido = strip_accents(
+                obj.apellidos.replace(
+                    '.',
+                    '').replace(
+                    ' SA',
+                    '').replace(
+                    ' SRL',
+                    '').replace(
+                    ' SCC',
+                    '').replace(
+                        ' SACIFI',
+                        '').replace(
+                            ' SH',
+                            '').replace(
+                                ' HNOS',
+                    ''))
+            return '<a href="http://www.cuitonline.com/search.php?q=%s+%s">buscar</a>' % (
+                nombre, apellido)
         else:
             cuit_cuil = obj.cuit_cuil.replace('-', '')
-            return '<a href="http://www.cuitonline.com/constancia/inscripcion/%s">%s</a>' % (cuit_cuil, obj.cuit_cuil)
+            return '<a href="http://www.cuitonline.com/constancia/inscripcion/%s">%s</a>' % (
+                cuit_cuil, obj.cuit_cuil)
     show_cuit.allow_tags = True
     show_cuit.short_description = 'CUIT/CUIL/CDI'
     show_cuit.admin_order_field = 'cuit_cuil'
@@ -545,16 +663,25 @@ admin.site.register(Persona, PersonaAdmin)
 
 class ProfesionalAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None,                {
+        (None, {
          'fields': [('apellidos', 'nombres'), ('titulo', 'icopa')]}),
-        ('Contacto',          {
+        ('Contacto', {
          'fields': [('domicilio', 'lugar'), ('telefono', 'celular'), ('email', 'web')]}),
         ('DNI/CUIT/CUIL/CDI', {'fields': ['cuit_cuil']}),
-        ('Otra info',         {
+        ('Otra info', {
          'fields': [('habilitado', 'jubilado', 'fallecido')]}),
     ]
-    list_display = ('nombre_completo', 'titulo', 'icopa', 'domicilio',
-                    'lugar', 'telefono', 'celular', 'email', 'web', 'cuit_cuil')
+    list_display = (
+        'nombre_completo',
+        'titulo',
+        'icopa',
+        'domicilio',
+        'lugar',
+        'telefono',
+        'celular',
+        'email',
+        'web',
+        'cuit_cuil')
     #list_editable = ('titulo', 'icopa', 'domicilio', 'lugar', 'telefono', 'celular', 'email', 'web', 'cuit_cuil')
     list_filter = [
         'habilitado', 'jubilado', 'fallecido', 'titulo__nombre', 'lugar']
@@ -565,11 +692,11 @@ class ProfesionalAdmin(admin.ModelAdmin):
 admin.site.register(Profesional, ProfesionalAdmin)
 
 
-class PresupuestoAdmin(NestedModelAdmin):
+class PresupuestoAdmin(NestedAdmin):
     fieldsets = [
-        (None, {'fields': [
-         ('expediente'), ('monto', 'fecha', 'porcentaje_cancelado'), ('obs')]}),
-    ]
+        (None, {
+            'fields': [
+                ('expediente'), ('monto', 'fecha', 'porcentaje_cancelado'), ('obs')]}), ]
     inlines = [PagoInline]
     list_display = (
         'expediente', 'monto', 'fecha', 'porcentaje_cancelado', 'obs')
