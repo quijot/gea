@@ -109,11 +109,11 @@ class Catastro(models.Model):
     class Meta:
         db_table = 'catastro'
 
-    def __str__(self):
+    def __unicode__(self):
         if str(self.zona) in ('1', '2', '3'):
-            return u''.join(('Z:',str(self.zona),' - S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela)).encode('utf-8')
+            return u''.join(('Z:',str(self.zona),' - S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
         elif str(self.zona) in ('4', '5'):
-            return u''.join(('Z:',str(self.zona),' - Pol:',self.poligono,' - P:',self.parcela)).encode('utf-8')
+            return u''.join(('Z:',str(self.zona),' - Pol:',self.poligono,' - P:',self.parcela))
         else:
             return u''
 
@@ -134,8 +134,8 @@ class CatastroLocal(models.Model):
         db_table = 'catastro_local'
         verbose_name_plural = 'catastros_locales'
 
-    def __str__(self):
-        return u''.join(('S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela)).encode('utf-8')
+    def __unicode__(self):
+        return u''.join(('S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
 
 
 class Circunscripcion(models.Model):
@@ -148,7 +148,7 @@ class Circunscripcion(models.Model):
         ordering = ['id']
         verbose_name_plural = 'circunscripciones'
 
-    def __str__(self):
+    def __unicode__(self):
         return self.nombre
 
 
@@ -159,7 +159,7 @@ class Comprobante(models.Model):
     class Meta:
         db_table = 'comprobante'
 
-    def __str__(self):
+    def __unicode__(self):
         return self.nombre
 
 
@@ -176,8 +176,8 @@ class Presupuesto(models.Model):
         db_table = 'presupuesto'
         ordering = ['expediente']
 
-    def __str__(self):
-        return u'%s - $%s - %s'.encode('utf-8') % (self.expediente, str(self.monto), 
+    def __unicode__(self):
+        return u'%s - $%s - %s' % (self.expediente, str(self.monto), 
         str(self.fecha))
 
 
@@ -194,8 +194,8 @@ class Pago(models.Model):
     class Meta:
         db_table = 'pago'
 
-    def __str__(self):
-        return u'%s%% - %s'.encode('utf-8') % (str(self.porcentaje), str(self.fecha))
+    def __unicode__(self):
+        return u'%s%% - %s' % (str(self.porcentaje), str(self.fecha))
 
 
 class Dp(models.Model):
@@ -207,15 +207,15 @@ class Dp(models.Model):
     circunscripcion = models.ForeignKey(Circunscripcion)
 
     def departamento(self):
-        return u'%02d %s'.encode('utf-8') % (self.dp, self.nombre)
+        return u'%02d %s' % (self.dp, self.nombre)
 
     class Meta:
         db_table = 'dp'
         verbose_name_plural = 'Departamentos'
         ordering = ['dp']
 
-    def __str__(self):
-        return u'%02d'.encode('utf-8') % self.dp
+    def __unicode__(self):
+        return u'%02d' % self.dp
 
 
 class Ds(models.Model):
@@ -225,15 +225,15 @@ class Ds(models.Model):
     nombre = CharNullField(max_length=50, verbose_name='nombre distrito')
 
     def distrito(self):
-        return '%02d' % (self.ds)
+        return u'%02d' % self.ds
 
     class Meta:
         db_table = 'ds'
         verbose_name_plural = 'distritos'
         ordering = ['dp', 'ds']
 
-    def __str__(self):
-        return u'%02d'.encode('utf-8') % self.ds
+    def __unicode__(self):
+        return u'%02d' % self.ds
 
 
 class Sd(models.Model):
@@ -245,7 +245,7 @@ class Sd(models.Model):
         verbose_name='nombre subdistrito')
 
     def subdistrito(self):
-        return '%02d' % (self.sd)
+        return u'%02d' % self.sd
 
     def dp(self):
         return self.ds.dp
@@ -264,8 +264,8 @@ class Sd(models.Model):
         verbose_name_plural = 'subdistritos'
         ordering = ['ds', 'sd']
 
-    def __str__(self):
-        return u'%s%s%02d'.encode('utf-8') % (self.ds.dp, self.ds, self.sd)
+    def __unicode__(self):
+        return u'%s%s%02d' % (self.ds.dp, self.ds, self.sd)
 
 
 class Expediente(models.Model):
@@ -299,8 +299,8 @@ class Expediente(models.Model):
         db_table = 'expediente'
         ordering = ['-id']
 
-    def __str__(self):
-        return str(self.id)
+    def __unicode__(self):
+        return u'%d' % self.id
 
 
 class ExpedienteLugar(models.Model):
@@ -313,8 +313,8 @@ class ExpedienteLugar(models.Model):
         verbose_name_plural = 'expediente_lugares'
         ordering = ['expediente', 'lugar']
 
-    def __str__(self):
-        return str(self.lugar)
+    def __unicode__(self):
+        return self.lugar.nombre
 
 
 class ExpedienteObjeto(models.Model):
@@ -330,8 +330,8 @@ class ExpedienteObjeto(models.Model):
         verbose_name_plural = 'expediente_objetos'
         ordering = ['expediente', 'objeto']
 
-    def __str__(self):
-        return str(self.objeto)
+    def __unicode__(self):
+        return self.objeto
 
 
 class ExpedientePartida(models.Model):
@@ -346,8 +346,8 @@ class ExpedientePartida(models.Model):
         verbose_name_plural = 'expediente_partidas'
         ordering = ['expediente', 'partida']
 
-    def __str__(self):
-        return u'%s'.encode('utf-8') % (self.partida)
+    def __unicode__(self):
+        return u'%s' % self.partida
         #return u'%s - %s'.encode('utf-8') % (str(self.expediente), self.partida)
 
 
@@ -380,8 +380,8 @@ class ExpedientePersona(models.Model):
         ordering = [
             'mensura', 'item', 'persona__apellidos', 'persona__nombres']
 
-    def __str__(self):
-       return u'%s %s'.encode('utf-8') % (self.persona.apellidos, self.persona.nombres)
+    def __unicode__(self):
+       return u'%s %s' % (self.persona.apellidos, self.persona.nombres)
 
 
 class ExpedienteProfesional(models.Model):
@@ -394,8 +394,8 @@ class ExpedienteProfesional(models.Model):
         verbose_name_plural = 'expediente_profesionales'
         ordering = ['profesional__apellidos', 'profesional__nombres']
 
-    def __str__(self):
-        return u'%s %s'.encode('utf-8') % (self.profesional.apellidos, self.profesional.nombres)
+    def __unicode__(self):
+        return u'%s %s' % (self.profesional.apellidos, self.profesional.nombres)
 
 
 class Lugar(models.Model):
@@ -408,8 +408,8 @@ class Lugar(models.Model):
         verbose_name_plural = 'lugares'
         ordering = ['nombre']
 
-    def __str__(self):
-        return unicode(self.nombre).encode('utf-8')
+    def __unicode__(self):
+        return self.nombre
 
 
 class Objeto(models.Model):
@@ -420,8 +420,8 @@ class Objeto(models.Model):
         db_table = 'objeto'
         ordering = ['nombre']
 
-    def __str__(self):
-        return unicode(self.nombre).encode('utf-8')
+    def __unicode__(self):
+        return self.nombre
 
 
 class Partida(models.Model):
@@ -433,15 +433,15 @@ class Partida(models.Model):
     api = models.SmallIntegerField(null=True, blank=True, default=0)
 
     def pii_completa(self):
-        return '%s-%06d/%04d-%d' % (self.sd, self.pii, self.subpii, self.api)
+        return u'%s-%06d/%04d-%d' % (self.sd, self.pii, self.subpii, self.api)
 
     class Meta:
         db_table = 'partida'
         unique_together = (('pii', 'subpii'))
         ordering = ['pii', 'subpii']
 
-    def __str__(self):
-        return u'%06d/%04d-%d'.encode('utf-8') % (self.pii, self.subpii, self.api)
+    def __unicode__(self):
+        return u'%06d/%04d-%d' % (self.pii, self.subpii, self.api)
 
 
 class PartidaDominio(models.Model):
@@ -486,7 +486,7 @@ class Persona(models.Model):
         unique=True, null=True, blank=True, default=None)
 
     def nombre_completo(self):
-        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
+        return u'%s %s' % (self.apellidos, self.nombres)
 
     def show_tipo_doc(self):
         if self.tipo_doc != '' and self.tipo_doc != None:
@@ -498,8 +498,8 @@ class Persona(models.Model):
         db_table = 'persona'
         ordering = ['apellidos', 'nombres']
 
-    def __str__(self):
-        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
+    def __unicode__(self):
+        return u'%s %s' % (self.apellidos, self.nombres)
 
 
 class Profesional(models.Model):
@@ -525,15 +525,15 @@ class Profesional(models.Model):
     fallecido = models.BooleanField(default=False)
 
     def nombre_completo(self):
-        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
+        return u'%s %s' % (self.apellidos, self.nombres)
 
     class Meta:
         db_table = 'profesional'
         verbose_name_plural = 'profesionales'
         ordering = ['apellidos', 'nombres']
 
-    def __str__(self):
-        return unicode(u'%s %s' % (self.apellidos, self.nombres)).encode('utf-8')
+    def __unicode__(self):
+        return u'%s %s' % (self.apellidos, self.nombres)
 
 
 class Titulo(models.Model):
@@ -544,8 +544,8 @@ class Titulo(models.Model):
         db_table = 'titulo'
         ordering = ['nombre']
 
-    def __str__(self):
-        return unicode(self.nombre).encode('utf-8')
+    def __unicode__(self):
+        return self.nombre
 
 
 class Zona(models.Model):
@@ -556,5 +556,5 @@ class Zona(models.Model):
         db_table = 'zona'
         ordering = ['id']
 
-    def __str__(self):
-        return str(self.id)
+    def __unicode__(self):
+        return u'%d' % self.id
