@@ -32,6 +32,7 @@ $ django-admin startproject estudio
 ### Editar ```settings.py``` del proyecto Django:
 
 ```bash
+$ # dentro de "estudio"
 $ vim estudio/settings.py
 ```
 
@@ -56,10 +57,11 @@ TIME_ZONE = 'America/Argentina/Buenos_Aires'
 ### Editar ```urls.py``` del proyecto Django:
 
 ```bash
+$ # dentro de "estudio"
 $ vim estudio/urls.py
 ```
 
-- Agregar las urls de las aplicaciones que instalamos:
+- Importar las vistas de ```gea``` y agregar las urls de las aplicaciones que instalamos:
 
 ```python
 from gea import views
