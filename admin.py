@@ -346,8 +346,8 @@ class ExpedienteLugarInline(NestedStackedInline):
     inlines = [CatastroLocalInline]
 
 
-#class ExpedienteObjetoInline(admin.TabularInline):
-class ExpedienteObjetoInline(NestedStackedInline):
+class ExpedienteObjetoInline(admin.TabularInline):
+#class ExpedienteObjetoInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedienteObjeto
     extra = 0
