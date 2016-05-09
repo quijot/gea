@@ -357,7 +357,7 @@ class SdAdmin(admin.ModelAdmin):
 admin.site.register(Sd, SdAdmin)
 
 
-class CatastroLocalInline(NestedTabularInline):
+class CatastroLocalInline(NestedStackedInline):
     model = CatastroLocal
     extra = 0
 
