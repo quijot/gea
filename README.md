@@ -8,10 +8,10 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 
 - GNU/Linux
 - Python 2.7.6 (no probé otro, pero seguro funciona bien)
-- [Django](https://pypi.python.org/pypi/Django/) 1.8.3
+- [Django](https://pypi.python.org/pypi/Django/) 1.9.6
 - [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1
-- [Grappelli](http://grappelliproject.com/) 2.7.1
-- [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 2.1.0 (para formularios anidados)
+- [Grappelli](http://grappelliproject.com/) 2.8.1 (opcional)
+- [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 3.0.2 (para formularios anidados)
 
 ## Instalación
 
@@ -36,11 +36,11 @@ $ # dentro de "estudio"
 $ vim estudio/settings.py
 ```
 
-- Agregar __```gea```__, ```grappelli``` y ```nested_admin``` a las ```INSTALLED_APPS```:
+- Agregar __```gea```__, ```grappelli``` (opcional)  y ```nested_admin``` a las ```INSTALLED_APPS```:
 
 ```python
 INSTALLED_APPS = (
-    'grappelli',
+    'grappelli', # opcional
     ...
     'gea',
     'nested_admin',
@@ -68,7 +68,7 @@ from gea import views
 
 urlpatterns = [
     ...
-    url(r'^grappelli/', include('grappelli.urls')),
+    url(r'^grappelli/', include('grappelli.urls')), # opcional
     url(r'^gea/', include('gea.urls')),
     url(r'^$', views.index, name='index'),
     url(r'^nested_admin/', include('nested_admin.urls')),
