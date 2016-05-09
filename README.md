@@ -58,6 +58,28 @@ LANGUAGE_CODE = 'es-AR'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 ```
 
+#### Para utilizar PostgreSQL (opcional)
+
+- Opcionalmente, configurar la Base de Datos para utilizar PostgreSQL, de otro modo, Django usa SQLite3 por defecto. Editar ```settings.py```.
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'gea',
+        'USER': '<postgresql-user>',
+        'PASSWORD': '<postgresql-password>', # be creative
+        'HOST': 'localhost',
+    }
+}
+```
+
+con esta opción se debe crear la BD, con el comando ```createdb``` de PostgreSQL
+
+```bash
+$ createdb gea
+```
+
 ### Editar ```urls.py``` del proyecto Django:
 
 ```bash
@@ -83,11 +105,12 @@ urlpatterns = [
 
 ```bash
 $ # dentro de "estudio"
+$ python manage.py makemigrations gea
 $ python manage.py migrate
 $ python manage.py createsuperuser
 ```
 
-```migrate``` pone a punto la base de datos, ```createsuperuser``` instala el sistema de autenticación de Django, _Django's auth system_, con lo cual, pedirá usuario y contraseña, por ejemplo: _admin_ y _Af7Dr2ujW_. Con estos datos ingresaremos después a la interfaz de administración.
+```makemigrations``` y ```migrate``` ponen a punto la base de datos, ```createsuperuser``` instala el sistema de autenticación de Django, _Django's auth system_, con lo cual, pedirá usuario, mail y contraseña, por ejemplo: _admin_ y _Af7Dr2ujW_. Con estos datos ingresaremos después a la interfaz de administración.
 
 
 ¡**LISTO**... Ahora podemos probar cómo quedó nuestra django-app!
