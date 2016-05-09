@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from gea.views import Home, catastros_locales, lugares, secciones, manzanas, \
 parcelas, listado_alfabetico, caratula, solicitud, visacion, plano, set, \
 catastro, dvapi, ExpedienteList, ExpedienteDetail, PersonaList, PersonaDetail, \
 CatastroLocalList
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', Home.as_view(), name='home'),
     # Catastros Locales
     url(r'^catastros-locales/$', CatastroLocalList.as_view(), name='catastros_locales'),
@@ -41,4 +41,4 @@ urlpatterns = patterns('',
     url(r'^catastro/$', catastro),
     # Herramientas
     url(r'^dvapi/$', dvapi, name='dvapi'),
-)
+]

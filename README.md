@@ -7,7 +7,7 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 ## Requisitos previos
 
 - GNU/Linux
-- Python 2.7.6 (no probé otro, pero seguro funciona bien)
+- Python 2.7.6 (No funciona directamente con Python 3, hay que cambiar por lo menos ```__unicode__``` por ```__str__``` en models.py.)
 - [Django](https://pypi.python.org/pypi/Django/) 1.9.6
 - [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1 (opcional si utiliza PostgreSQL)
 - [Grappelli](http://grappelliproject.com/) 2.8.1 (opcional)
@@ -46,7 +46,7 @@ $ vim estudio/settings.py
 INSTALLED_APPS = (
     'grappelli', # opcional
     ...
-    'gea',
+    'gea.apps.GeaConfig',
     'nested_admin',
 )
 ```
@@ -90,13 +90,16 @@ $ vim estudio/urls.py
 - Importar las vistas de ```gea``` y agregar las urls de las aplicaciones que instalamos:
 
 ```python
-from gea import views
+from django.conf.urls import include, url
+from django.contrib import admin
+
+from gea.views import Home
 
 urlpatterns = [
     ...
     url(r'^grappelli/', include('grappelli.urls')), # opcional
     url(r'^gea/', include('gea.urls')),
-    url(r'^$', views.index, name='index'),
+    url(r'^$', Home.as_view(), name='home'),
     url(r'^nested_admin/', include('nested_admin.urls')),
 ]
 ```
@@ -112,6 +115,21 @@ $ python manage.py createsuperuser
 
 ```makemigrations``` y ```migrate``` ponen a punto la base de datos, ```createsuperuser``` instala el sistema de autenticación de Django, _Django's auth system_, con lo cual, pedirá usuario, mail y contraseña, por ejemplo: _admin_ y _Af7Dr2ujW_. Con estos datos ingresaremos después a la interfaz de administración.
 
+## Archivos estáticos (css, img, js)
+
+Por último, algo muy importante: los archivos de estilo, imágenes y scripts que usará nuestra nueva aplicación.
+
+Editar ```settings.py``` agregando la siguiente linea:
+
+```python
+STATIC_ROOT = './static/'
+```
+
+Y ejecutar:
+```bash
+$ # dentro de "estudio"
+$ python manage.py collectstatic
+```
 
 ¡**LISTO**... Ahora podemos probar cómo quedó nuestra django-app!
 
