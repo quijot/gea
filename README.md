@@ -9,7 +9,7 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 - GNU/Linux
 - Python 2.7.6 (no probé otro, pero seguro funciona bien)
 - [Django](https://pypi.python.org/pypi/Django/) 1.9.6
-- [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1
+- [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1 (opcional si utiliza PostgreSQL)
 - [Grappelli](http://grappelliproject.com/) 2.8.1 (opcional)
 - [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 3.0.2 (para formularios anidados)
 
@@ -19,7 +19,11 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 $ pip install gea
 ```
 
-Se instalan también los ```requirements``` como Django, Grappelli, etc.
+Se instalan también los ```requirements``` como Django, Grappelli y nested-admin. Si además quiere utilizar PostgreSQL para la Base de Datos, deberá instalar manualmente psycopg2.
+
+```bash
+$ pip install psycopg2
+```
 
 ## Puesta en marcha
 
