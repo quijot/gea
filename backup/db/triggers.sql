@@ -116,6 +116,7 @@ CREATE TRIGGER complete_antecedente_trigger
     EXECUTE PROCEDURE complete_antecedente();
 
 
+-- AHORA SE RESUELVE DESDE models.py --
 -- --
 -- -- Name: fix_nombres_apellidos(); Type: FUNCTION;
 -- --

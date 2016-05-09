@@ -9,3 +9,4 @@ backup/db/*.gz
 backup/files
 backup/files/*
 backup/sql
+backup/db/gea-db*
