@@ -1,0 +1,102 @@
+{% extends "menu.html" %}
+{% block title %}GEA | Listado de Expedientes{% endblock title %}
+
+{# set menu in active mode #}
+{% block nav-list-exp %} class="active"{% endblock %}
+
+{% block content %}
+{% load tags %}
+<div class="page-header">
+  <h1><i class="fa fa-folder"></i> <a href="{% url 'expedientes' %}">Listado de Expedientes</a></h1>
+  <strong>{{ count }}</strong> expediente{% if count > 1 %}s{% endif %} filtrado{% if count > 1 %}s{% endif %}
+</div>
+<div class="well well-sm col-md-12">
+  <form class="navbar-form navbar-right" action="." method="get">
+    <div class="form-group">
+      <input type="checkbox" name="pendiente" class="checkbox-inline" {% if request.GET.pendiente %}checked{% endif %}> Orden pendiente
+      <input type="checkbox" name="duplicado" class="checkbox-inline" {% if request.GET.duplicado %}checked{% endif %}> Duplicado
+      <input type="checkbox" name="inscripto" class="checkbox-inline" {% if request.GET.inscripto %}checked{% endif %}> Inscripto
+      <input type="checkbox" name="cancelado" class="checkbox-inline" {% if request.GET.cancelado %}checked{% endif %}> Cancelado
+      <input type="checkbox" name="sin_inscr" class="checkbox-inline" {% if request.GET.sin_inscr %}checked{% endif %}> No requiere inscripción
+      <div class="input-group input-group-sm">
+        <span class="input-group-addon"><i class="fa fa-folder"></i> N&ordm;</span>
+        <input type="text" id="search" name="search" placeholder="Expediente/Plano" class="form-control" value="{{ request.GET.search }}">
+        <span class="input-group-btn"><button type="submit" class="btn btn-sm btn-success"><i class="fa fa-search"></i></button></span>
+      </div>
+      <div class="btn-group">
+        <a class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+          Ver
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a href="?{% url_replace request 'paginate_by' 10 %}">10 por pág.</a></li>
+          <li><a href="?{% url_replace request 'paginate_by' 50 %}">50 por pág.</a></li>
+          <li><a href="?{% url_replace request 'paginate_by' 100 %}">100 por pág.</a></li>
+         </ul>
+      </div>
+      <a href="?{% url_replace request 'pendiente' 'on' %}" class="btn btn-primary btn-sm {% if request.GET.pendiente %}active{% endif %}">Orden pendiente</a>
+    </div>
+  </form>
+</div>
+{% include "_pagination.html" %}
+<table class="table table-bordered table-condensed table-hover">
+  <thead>
+    <tr>
+      <th>Expediente</th>
+      <th>Persona(s)</th>
+      <th>Lugar(es)</th>
+      <th>Partida(s)</th>
+      <th>Plano</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in object_list %}
+    <tr>
+      <td><!-- EXPEDIENTE -->
+        <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a>
+        <!--<a href="{% url 'expediente' e.id %}">{{ e.id }}</a>-->
+      </td>
+      <td><!-- PERSONAS -->
+      {% if e.orden_numero and not e.inscripcion_numero %}<span class="label label-warning">PENDIENTE</span> Orden N&ordm; {{ e.orden_numero }} - {{ e.orden_fecha }}<br>{% endif %}
+      {% if e.cancelado %}<span class="label label-danger">CANCELADO</span> {{ e.cancelado_por }}<br>{% endif %}
+      {% if e.expedientepersona_set %}
+        {% for ep in e.expedientepersona_set.all %}
+        <a href="/admin/gea/persona/{{ ep.persona.id }}/">{{ ep.persona.nombre_completo }}</a>
+          {% if ep.comitente %}<span class="label label-primary">COMITENTE</span>{% endif %}
+          {% if ep.persona.telefono %}({{ ep.persona.telefono }}){% endif %}
+          {% if ep.persona.celular %}({{ ep.persona.celular }}){% endif %}
+          {% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td><!-- LUGARES -->
+      {% if e.expedientelugar_set %}
+        {% for el in e.expedientelugar_set.all %}
+        <a href="/admin/gea/lugar/{{ el.lugar.id }}/">{{ el.lugar.nombre }}</a> {% for cl in el.catastrolocal_set.all %}<br>{{ cl }}{% endfor %}{% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td><!-- PARTIDAS -->
+      {% if e.expedientepartida_set %}
+        {% for ep in e.expedientepartida_set.all %}
+          {% if ep.set_ruta %}<a href="{{ ep.set_ruta }}">{% endif %}{{ ep.partida.sd }}-{{ ep.partida }}{% if ep.set_ruta %}</a>{% endif %}{% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td><!-- PLANO -->
+        {% if e.plano_ruta %}<a href="{{ e.plano_ruta }}">{% endif %}{% if e.duplicado %}Dup.{% endif %}{% if e.inscripcion_numero %}{{ e.inscripcion_numero }}{% endif %}{% if e.plano_ruta %}</a>{% endif %}
+        {% if e.inscripcion_fecha %}({{ e.inscripcion_fecha }}){% endif %}
+        {% if e.sin_inscripcion %}<span class="label label-info">NO REQUIERE</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <div class="alert alert-info" role="alert">
+      <i class="fa fa-info-circle" aria-hidden="true"></i>
+      <span class="sr-only">Información:</span>
+      No se encontraron Expedientes.
+    </div>
+    {% endfor %}
+  </tbody>
+</table>
+{% include "_pagination.html" %}
+{% endblock content %}

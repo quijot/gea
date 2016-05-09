@@ -1,0 +1,221 @@
+{% extends "nota.html" %}
+{% block title %}{% if e %}Carátula {{ e.id }}{% endif %}{% endblock %}
+{% block stylesheets %}
+<style>
+   body { max-width:90%; margin: 1em 0 0 4em; font-family: "Century Gothic"; font-size: 11pt }
+   .encabezado, .encabezado a { color: #999 }
+   div.caratula { border: 2px solid; padding: 10px }
+   p { text-align: justify }
+   p.sangria { text-indent: 10% }
+   a { color: black; text-decoration: none }
+   a:visited { text-decoration:none }
+   a:hover { color: #4fb2d3 }
+   .nomenclatura { font-size: small; text-align: center ; width: 35%; margin: auto; border: 1px solid; border-collapse: collapse }
+   .nomenclatura td { border: 1px solid }
+   .detalle_pii { text-align: center; border: 1px solid; border-collapse: collapse }
+   .detalle_pii th, .detalle_pii td { border: 1px solid; padding: 5px }
+   .inscripcion { font-size: x-large; font-family: Century }
+</style>
+{% endblock %}
+<!-- Elimina el encabezado de la Nota -->
+{% block encabezado %}{% endblock %}
+{% block content %}
+{% if e %}
+  <!-- Expediente Nº -->
+  <span style="font-size: smaller">Expte. <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a></span>
+  <div class="caratula">
+    <!-- Título -->
+    <div style="font-size: x-large">PLANO DE MENSURA
+    <!-- Nº de Inscripción del Plano -->
+      <div style="float: right; font-size: small">
+        Nº 
+        <span class="inscripcion">
+          <strong>{{ e.inscripcion_numero|default:"__________" }}</strong>
+        </span>
+      </div>
+    </div>
+    <hr>
+    <!-- Partidas de Impuesto Inmobiliario -->
+    <div style="float: right">PII Nº:
+    {% if e.expedientepartida_set.count > 1 %}
+    <strong><a href="#detalle_pii">VER DETALLE</a></strong>
+    {% else %}
+      {% for ep in e.expedientepartida_set.all %}
+        {% with ep.partida as p %}
+    <a href="/admin/gea/partida/{{ p.id }}/"><strong>{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}</strong></a>
+        {% endwith %}
+      {% endfor %}
+    {% endif %}
+    </div>
+    <!-- Provincia -->
+    <div>PROVINCIA: <strong>SANTA FE</strong></div>
+    <!-- Departamento -->
+    <div>DEPARTAMENTO:
+    {% regroup e.expedientepartida_set.all by partida.sd.dp.nombre as ep %}
+    {% for dp in ep %}
+      <a href="/admin/gea/dp/?q={{ dp.grouper }}"><strong>{{ dp.grouper|upper }}</strong></a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+    </div>
+    <!-- Distrito -->
+    <div>DISTRITO:
+    {% regroup e.expedientepartida_set.all by partida.sd.ds.nombre as ep %}
+    {% for ds in ep %}
+      <a href="/admin/gea/ds/?q={{ ds.grouper }}"><strong>{{ ds.grouper|upper }}</strong></a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+    </div>
+    <!-- Lugar -->
+    <div>LUGAR:
+    {% for el in e.expedientelugar_set.all %}
+      <a href="/admin/gea/lugar/{{ el.lugar.id }}/"><strong>{{ el.lugar.nombre|upper }}</strong></a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+    </div>
+    <!-- Catastro Local -->
+    <div>
+    {% for el in e.expedientelugar_set.all %}
+      {% for c in el.catastrolocal_set.all %}
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <strong>Sección: {{ c.seccion }} - Manzana: {{ c.manzana }} - Parcela: {{ c.parcela }}{% if c.subparcela %} - Subparcela: {{ c.subparcela }}{% endif %}{% if c.suburbana %}- Zona Suburbana{% endif %}</strong><br />
+      {% endfor %}
+    {% endfor %}
+    </div>
+    <br />
+    <!-- Obejeto -->
+    <div>OBJETO:
+    {% for ep in e.expedienteobjeto_set.all %}
+      <a href="/admin/gea/objeto/{{ ep.objeto.id }}/"><strong>{{ ep.objeto.nombre|upper }}</strong></a>
+    {% endfor %}
+    </div>
+    <br />
+    <!-- Inmueble -->
+    <div>INMUEBLE: <strong>{{ inmueble }}</strong></div>
+    <br />
+    <!-- Dominio -->
+    <div>DOMINIO:
+      <strong>
+      Tº: {{ tomo|default:"_____" }} {% if par %}Par{% else %}Impar{% endif %} -
+      Fº: {{ folio|default:"_____" }} -
+      Nº: {{ numero|default:"_____" }} -
+      {{ fecha_dominio|default:"___/___/_____" }}
+      </strong>
+    </div>
+    <br />
+    <!-- Propietarios -->
+    <div>PROPIETARIO:
+    {% for ep in e.expedientepersona_set.all %}
+      {% if ep.propietario %}
+      <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="/admin/gea/persona/{{ ep.persona.id }}/"><span style="font-size: x-large">{{ ep.persona.nombres|upper }} {{ ep.persona.apellidos }}</span></a>
+      {% if ep.sucesion %}<small>(* hoy sus sucesores)</small>{% endif %}
+      {% if ep.nuda_propiedad %}<small>(* nuda propiedad)</small>{% endif %}
+      {% if ep.partes_indivisas_propias %}<small>({{ ep.partes_indivisas_propias }}/{{ ep.partes_indivisas_total }} partes indivisas)</small>{% endif %}
+      {% endif %}
+    {% endfor %}
+    </div>
+    <br />
+    <!-- Balance -->
+    <div><center><strong><u>BALANCE DE SUPERFICIES</u></strong>:</center></div>
+    <div>
+      <span>Sup. s/Título</span>
+      {% with e.expedientepartida_set.all|first as ep %}
+        {% with ep.catastro_set.all|first as c %}
+          {% if c.zona.id = 4 %}
+      <span style="float: right">____<sup>has</sup> ____<sup>as</sup> ____<sup>cas</sup> ____<sup>dm&sup2;</sup></span>
+          {% else %}
+      <span style="float: right">_______.____ m&sup2;</span>
+          {% endif %}
+        {% endwith %}
+      {% endwith %}
+    </div>
+    <div>Sup. s/Mensura</div>
+    <div>
+      <strong>
+      <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lote ___</span>
+      {% with e.expedientepartida_set.all|first as ep %}
+        {% with ep.catastro_set.all|first as c %}
+          {% if c.zona.id = 4 %}
+      <span style="float: right">____<sup>has</sup> ____<sup>as</sup> ____<sup>cas</sup> ____<sup>dm&sup2;</sup></span>
+          {% else %}
+      <span style="float: right">_______.____ m&sup2;</span>
+          {% endif %}
+        {% endwith %}
+      {% endwith %}
+      </strong>
+    </div>
+    <br />
+    <br />
+    <br />
+    <!-- Fecha y firma -->
+    {% with e.expedienteprofesional_set.all|first as p %}
+    <div>
+      <span>&nbsp;</span>
+      <span style="float: right; text-decoration: overline">
+        <strong>{{ p.profesional.nombres|upper }} {{ p.profesional.apellidos|upper }}</strong><br />
+      </span>
+    </div>
+    <div>
+      <span>&nbsp;</span>
+      <span style="float: right; font-size:smaller">
+        {{ p.profesional.titulo|upper }} ICoPA {{ p.profesional.icopa }}<br />
+      </span>
+    </div>
+    <div>
+      <span>GÁLVEZ, {{ e.fecha_plano|date:"E \D\E Y"|default:"__________"|upper }}</span>
+      <span style="float: right; font-size:smaller">
+        {{ p.profesional.domicilio }} - {{ p.profesional.lugar.obs|upper }}
+      </span>
+    </div>
+    {% endwith %}
+    <hr>
+    <!-- Observaciones -->
+    <div>
+      <strong><u>OBSERVACIONES</u></strong>:<br />
+      Expediente Co.P.A. Nº {{ e.orden_numero|default:"__________" }} - {{ e.orden_fecha|default:"___/___/______" }}<br />
+      {% for a in e.antecedente_set.all %}
+        {% if 'Modifica' in a.obs %}{{ a.obs }}<br />{% endif %}
+      {% endfor %}
+      {{ obs }}
+    </div>
+    <br />
+    <hr>
+    <!-- Nomenclatura -->
+    <table class="nomenclatura">
+      <tr><td colspan="4">NOMENCLATURA CATASTRAL</td></tr>
+      {% with e.expedientepartida_set.all|first as ep %}
+        {% with ep.partida as p %}
+          {% with ep.catastro_set.all|first as c %}
+      <tr><td>DPTO</td><td>DTO</td><td>SUBDTO</td><td>Z</td></tr>
+      <tr><td>{{ p.sd.dp }}</td><td>{{ p.sd.ds }}</td><td>{{ p.sd.subdistrito }}</td><td><a href="/admin/gea/zona/{{ c.zona.id }}/">{{ c.zona }}</a></td></tr>
+      <tr><td>SECC</td><td>POLIG</td><td colspan="2">MANZANA</td></tr>
+      <tr><td>{{ c.seccion|add:"0"|stringformat:"02d" }}</td><td>{{ c.poligono }}</td><td colspan="2">{{ c.manzana|add:"0"|stringformat:"04d" }}</td></tr>
+      <tr><td colspan="2">PARCELA</td><td colspan="2">SUBPARC</td></tr>
+            {% if e.expedientepartida_set.count > 1 %}
+      <tr><td colspan="4"><strong><a href="#detalle_pii">VER DETALLE</a></strong></td></tr>
+            {% else %}
+      <tr><td colspan="2">{{ c.parcela|add:"0"|stringformat:"04d" }}</td><td colspan="2">{{ c.subparcela|add:"0"|stringformat:"04d" }}</td></tr>
+            {% endif %}
+          {% endwith %}
+        {% endwith %}
+      {% endwith %}
+    </table>
+  </div>
+  <br />
+  <!-- Detalle de PII -->
+  {% if e.expedientepartida_set.count > 1 %}
+  <div>
+    <div id="detalle_pii" style="font-size: large">DETALLE DE PARTIDAS DE IMPUESTO INMOBIBLIARIO</div>
+    <table class="detalle_pii">
+      <tr><th>MENSURA</th><th>TÍTULO</th><th>PARTIDA</th><th>LOTE</th><th>PLANO</th><th>PARCELA</th><th>SUBPARC</th></tr>
+      {% for ep in e.expedientepartida_set.all %}
+        {% with ep.partida as p %}
+          {% for c in ep.catastro_set.all %}
+      <tr><td></td><td></td><td>{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}</td><td></td><td></td><td>{{ c.parcela|add:"0"|stringformat:"04d" }}</td><td>{{ c.subparcela|add:"0"|stringformat:"04d" }}</td></tr>
+          {% endfor %}
+        {% endwith %}
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+{% else %}
+  <p>No existe el expediente.</p>
+{% endif %}
+{% endblock %}

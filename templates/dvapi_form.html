@@ -1,12 +1,23 @@
-{% extends "admin/base_site.html" %}
+{% extends "menu.html" %}
 
-{% block title %}Calcular DV{% endblock %}
+{# set menu in active mode #}
+{% block nav-tool-dvapi %} class="active"{% endblock %}
+
+{% block title %}GEA | Dígito Verificador{% endblock %}
 
 {% block content %}
-<form action="." method="post">{% csrf_token %}
-<table>
-{{ form.as_table }}
-</table>
-<input type="submit" value="Calcular D&iacute;gito Verificador" />
+<form class="form-horizontal col-lg-6" action="." method="post">{% csrf_token %}
+  <legend><i class="fa fa-calculator"></i> Calcular Dígito Verificador API</legend>
+  <fieldset>
+    <div class="form-group">
+      <table class="table table-condensed table-hover">
+      {{ form.as_table }}
+      </table>
+      <div class="well well-sm col-lg-10">
+        Resultado: <strong>{{ dv }}</strong>
+      </div>
+        <button type="submit" class="btn btn-primary pull-right">Calcular</button>
+    </div>
+  </fieldset>
 </form>
 {% endblock %}

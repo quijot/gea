@@ -1,0 +1,68 @@
+{% extends "menu.html" %}
+{% block title %}GEA | Listado de Expedientes{% endblock title %}
+
+{# set menu in active mode #}
+{% block nav-list-exp %} class="active"{% endblock %}
+
+{% block content %}
+{% if cl %}
+<div class="page-header">
+  <h1><i class="fa fa-folder"></i> <a href="{% url 'listado_expedientes' %}">Listado de Expedientes</a></h1>
+</div>
+{% include "_pagination.html" %}
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Expediente</th>
+      <th>Personas</th>
+      <th>Lugar(es)</th>
+      <th>Partida(s)</th>
+      <th>Plano</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in cl %}
+    <tr>
+      <td>
+        <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a>
+      </td>
+      <td>
+      {% if e.expedientepersona_set %}
+        {% for ep in e.expedientepersona_set.all %}
+        <a href="/admin/gea/persona/{{ ep.persona.id }}/">{{ ep.persona.apellidos }} {{ ep.persona.nombres }}</a> {% if ep.comitente %}(Comitente){% endif %} {% if ep.persona.telefono or ep.persona.celular %}({{ ep.persona.telefono }} / {{ ep.persona.celular }}){% endif %}<br />
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+      {% if e.expedientelugar_set %}
+        {% for el in e.expedientelugar_set.all %}
+        <a href="/admin/gea/lugar/{{ el.lugar.id }}/">{{ el.lugar.nombre }}</a> {% for cl in el.catastrolocal_set.all %}<br />{{ cl }}{% endfor %}
+          {% if not forloop.last %}<br />{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+      {% if e.expedientepartida_set %}
+        {% for ep in e.expedientepartida_set.all %}
+          {% if ep.set_ruta %}<a href="{{ ep.set_ruta }}">{% endif %}{{ ep.partida.sd }}-{{ ep.partida }}{% if ep.set_ruta %}</a>{% endif %}
+          {% if not forloop.last %}<br />{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+        {% if e.plano_ruta %}<a href="{{ e.plano_ruta }}">{% endif %}{% if e.inscripcion_numero %}{{ e.inscripcion_numero }}{% endif %}{% if e.plano_ruta %}</a>{% endif %}
+        {% if e.inscripcion_fecha %}({{ e.inscripcion_fecha }}){% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% include "_pagination.html" %}
+{% else %}
+<div class="alert alert-info" role="alert">
+  <i class="fa fa-info-circle" aria-hidden="true"></i>
+  <span class="sr-only">Información:</span>
+  No se encontraron Expedientes.
+</div>
+{% endif %}
+{% endblock content %}

@@ -1,23 +1,44 @@
-from django.conf.urls import patterns, include, url
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+from django.conf.urls import patterns, url
 
-from gea import views
-
+from gea.views import Home, catastros_locales, lugares, secciones, manzanas, \
+parcelas, listado_alfabetico, caratula, solicitud, visacion, plano, set, \
+catastro, dvapi, ExpedienteList, ExpedienteDetail, PersonaList, PersonaDetail, \
+CatastroLocalList
 
 urlpatterns = patterns('',
-    url(r'^$', views.index, name='index'),
-#    url(r'^solic/(?P<eid>\d+)/(?P<domfiscal>(\w|\s|,|.|-|_|\\)*)/(?P<localidad>(\w|\s)*)/(?P<cp>\w*)$', views.solic),
-#    url(r'^visac/(?P<eid>\d+)/(?P<sr>(\w|\s|,|.|-|_)*)/(?P<localidad>(\w|\s|,|.|-|_)*)$', views.visac),
-#    url(r'^plano/(?P<circunscripcion>\d{1})/(?P<nro_inscripcion>\d{6})$', views.plano),
-#    url(r'^set/(?P<pii>\d{6})(?P<sub_pii>\d{4})$', views.set),
-#    url(r'^dvapi/(?P<dv>\d)$', views.dvapi),
-    url(r'^solicitud/$', views.solic),
-    url(r'^visacion/$', views.visacion),
-    url(r'^plano/$', views.plano),
-    url(r'^set/$', views.set),
-    url(r'^catastro/$', views.catastro),
-    url(r'^dvapi/$', views.dvapi),
-    url(
-       r'^presup/(?P<persona>(\w|\s|,|.|-|_)*)/(?P<objeto>(\w|\s|,|.|-|_)*)$',
-       views.presup),
-    url(r'^presup_form/$', views.presup_form),
+    url(r'^$', Home.as_view(), name='home'),
+    # Catastros Locales
+    url(r'^catastros-locales/$', CatastroLocalList.as_view(), name='catastros_locales'),
+#     url(r'^catastros-locales/$', catastros_locales, name='catastros_locales'),
+#     url(r'^catastros-locales/(?P<l>[^/]+)/$', lugares),
+#     url(r'^catastros-locales/(?P<l>[^/]+)/(?P<s>[^/]+)/$', secciones),
+#     url(r'^catastros-locales/(?P<l>[^/]+)/(?P<s>[^/]+)/(?P<m>[^/]+)/$',
+#         manzanas),
+    url(r'^catastros-locales/%s' %
+    '(?P<l>[^/]+)/(?P<s>[^/]+)/(?P<m>[^/]+)/(?P<p>[^/]+)/$', parcelas),
+    # Listado alfabético
+    url(r'^listado-alfabetico/$', listado_alfabetico,
+        name='listado_alfabetico'),
+    url(r'^listado-alfabetico/(?P<inicial>[^/]+)/$', listado_alfabetico,
+        name="listado_alfabetico"),
+    # Expedientes
+    url(r'^expedientes/$', ExpedienteList.as_view(), name="expedientes"),
+    url(r'^expedientes/(?P<pk>\d+)/$', ExpedienteDetail.as_view(),
+        name="expediente"),
+    # Personas
+    url(r'^personas/$', PersonaList.as_view(), name="personas"),
+    url(r'^personas/(?P<pk>\d+)/$', PersonaDetail.as_view(),
+        name="persona"),
+    # Notas
+    url(r'^caratula/$', caratula, name="caratula"),
+    url(r'^solicitud/$', solicitud, name="solicitud"),
+    url(r'^visacion/$', visacion, name="visacion"),
+    # Búsquedas
+    url(r'^plano/$', plano),
+    url(r'^set/$', set),
+    url(r'^catastro/$', catastro),
+    # Herramientas
+    url(r'^dvapi/$', dvapi, name='dvapi'),
 )

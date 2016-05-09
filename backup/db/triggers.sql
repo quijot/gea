@@ -74,41 +74,6 @@ CREATE TRIGGER dvapi_update
 
 
 --
--- Name: fix_nombres_apellidos(); Type: FUNCTION;
---
-
-CREATE FUNCTION fix_nombres_apellidos() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF (NEW.apellidos IS NOT NULL) THEN
-        NEW.apellidos := upper(NEW.apellidos);
-    END IF;
-    IF (NEW.apellidos_alternativos IS NOT NULL) THEN
-        NEW.apellidos_alternativos := upper(NEW.apellidos_alternativos);
-    END IF;
-    IF (NEW.nombres IS NOT NULL) THEN
-        NEW.nombres := initcap(NEW.nombres);
-    END IF;
-    IF (NEW.nombres_alternativos IS NOT NULL) THEN
-        NEW.nombres_alternativos := initcap(NEW.nombres_alternativos);
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-
---
--- Name: fix_nombres_apellidos; Type: TRIGGER;
---
-
-CREATE TRIGGER fix_nombres_apellidos_trigger
-    BEFORE INSERT OR UPDATE OF nombres, apellidos, nombres_alternativos, apellidos_alternativos ON persona
-    FOR EACH ROW
-    EXECUTE PROCEDURE fix_nombres_apellidos();
-
-
---
 -- Name: complete_antecedente(); Type: FUNCTION;
 --
 
@@ -149,3 +114,38 @@ CREATE TRIGGER complete_antecedente_trigger
     BEFORE INSERT OR UPDATE OF expediente_modificado_id, inscripcion_numero, duplicado ON antecedente
     FOR EACH ROW
     EXECUTE PROCEDURE complete_antecedente();
+
+
+-- --
+-- -- Name: fix_nombres_apellidos(); Type: FUNCTION;
+-- --
+-- 
+-- CREATE FUNCTION fix_nombres_apellidos() RETURNS trigger
+--     LANGUAGE plpgsql
+--     AS $$
+-- BEGIN
+--     IF (NEW.apellidos IS NOT NULL) THEN
+--         NEW.apellidos := upper(NEW.apellidos);
+--     END IF;
+--     IF (NEW.apellidos_alternativos IS NOT NULL) THEN
+--         NEW.apellidos_alternativos := upper(NEW.apellidos_alternativos);
+--     END IF;
+--     IF (NEW.nombres IS NOT NULL) THEN
+--         NEW.nombres := initcap(NEW.nombres);
+--     END IF;
+--     IF (NEW.nombres_alternativos IS NOT NULL) THEN
+--         NEW.nombres_alternativos := initcap(NEW.nombres_alternativos);
+--     END IF;
+--     RETURN NEW;
+-- END;
+-- $$;
+-- 
+-- 
+-- --
+-- -- Name: fix_nombres_apellidos; Type: TRIGGER;
+-- --
+-- 
+-- CREATE TRIGGER fix_nombres_apellidos_trigger
+--     BEFORE INSERT OR UPDATE OF nombres, apellidos, nombres_alternativos, apellidos_alternativos ON persona
+--     FOR EACH ROW
+--     EXECUTE PROCEDURE fix_nombres_apellidos();

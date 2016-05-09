@@ -9,7 +9,7 @@
   <div style="float: right; font-size: smaller">
     <em>Expte. <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a></em>
   </div>
-  {% if e.expedientelugar_set %}
+  {% if e.expedientelugar_set.all %}
     {% for el in e.expedientelugar_set.all %}
         <br /><br /><br />
         <div align="right">Gálvez, {% now 'j \d\e F, Y' %}</div>
@@ -20,29 +20,38 @@
             <div><u>S&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;D</u></div>
           </div>
           <p>De mi mayor consideración:</p>
-          <p class="sangria">El que suscribe, <strong>Agrimensor Alberto PESTARINI</strong>, SOLICITA la visación del Plano de
-          {% if e.expedienteobjeto_set %}
+          <p class="sangria">Quien suscribe,
+          {% if e.expedienteprofesional_set.all %}
+            {% for ep in e.expedienteprofesional_set.all %}
+              <strong>{{ ep.profesional.titulo }} {{ ep.profesional.nombres }} {{ ep.profesional.apellidos }}</strong>,
+            {% endfor %}
+          {% endif %}
+          SOLICITA la visación del Plano de
+          {% if e.expedienteobjeto_set.all %}
             {% for ep in e.expedienteobjeto_set.all %}
               <strong>{{ ep.objeto.nombre.upper }}</strong>
             {% endfor %}
           {% endif %}
           de la propiedad de
-          {% if e.expedientepersona_set %}
+          {% if e.expedientepersona_set.all %}
             {% for ep in e.expedientepersona_set.all %}
               {% if ep.propietario %}
                 <strong>{% if ep.sucesion %}Sucesores de {% endif %}{{ ep.persona.nombres }} {{ ep.persona.apellidos }}</strong>,
               {% endif %}
             {% endfor %}
           {% endif %}
-          ubicada en su distrito: {{ el.lugar.nombre }}
-          {% if el.catastrolocal_set %}
+          ubicada en su distrito: {{ e.expedientepartida_set.first.partida.sd.ds.nombre|upper }}, {{ el.lugar.nombre }}
+          {% if el.catastrolocal_set.all %}
+            (
             {% for c in el.catastrolocal_set.all %}
-              ({{ c }}{% if c.suburbana %}, Zona Suburbana{% endif %}{% if forloop.last %}){% else %}, {% endif %}
+              {{ c }}{% if c.subparcela %} - Subparcela:{{c.subparcela}}{% endif %}{% if c.suburbana %}, Zona Suburbana{% endif %}{% if not forloop.last %}; {% endif %}
             {% endfor %}
+            )
           {% endif %}.</p>
           <p class="sangria">Se adjuntan dos copias del plano.</p>
           <p class="sangria">Sin más, saludo a UD. muy atte.</p>
         </div>
+
     {% endfor %}
   {% endif %}
 {% endif %}

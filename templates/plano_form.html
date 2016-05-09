@@ -1,12 +1,20 @@
-{% extends "admin/base_site.html" %}
+{% extends "menu.html" %}
 
-{% block title %}Plano{% endblock %}
+{# set menu in active mode #}
+{% block nav-search-plano %} class="active"{% endblock %}
+
+{% block title %}GEA | Buscar Planos por Número de Inscripción{% endblock %}
 
 {% block content %}
-<form action="." method="post">{% csrf_token %}
-<table>
-{{ form.as_table }}
-</table>
-<input type="submit" value="Buscar Plano" />
+<form class="form-horizontal col-lg-6" action="." method="post">{% csrf_token %}
+  <legend><i class="fa fa-map"></i> Buscar Planos por Número de Inscripción</legend>
+  <fieldset>
+    <div class="form-group">
+      <table class="table table-condensed table-hover">
+      {{ form.as_table }}
+      </table>
+      <button type="submit" class="btn btn-primary pull-right"><i class="fa fa-search"></i> Buscar</button>
+    </div>
+  </fieldset>
 </form>
 {% endblock %}

@@ -19,7 +19,7 @@ sudo apt-get install postgresql postgresql-contrib postgresql-client postgresql-
 
 #### Crear base de datos PostgreSQL
 
-Vas a necesitar un superuser de postgresql. [En este post](http://stackoverflow.com/questions/1471571/how-to-configure-postgresql-for-the-first-time) explica bastante bien cómo hacerlo.
+Vas a necesitar un superuser de postgresql. Googleá cómo hacerlo.
 
 ```bash
 $ # si no tenés un superuser de postgresql, crealo ahora
@@ -36,22 +36,23 @@ DATABASES = {
         'NAME': 'gea',
         'USER': 'pgsuperuser',
         'PASSWORD': '<your-pg-password>',
+        'HOST': 'localhost',
     }
 }
 ```
 
 ## Crear un Host Virtual en Zentyal
 
-Office -> Servidor Web -> Hosts virtuales -> Añadir nuevo
-
 Supongamos que elegimos el nombre __gea.net__.
+
+Seguir [estas instrucciones](https://wiki.zentyal.org/wiki/Apache_web_server#Configuring_a_non-SSL_virtual_host)
 
 ## Configurar wsgi
 
-Crear un archivo que se incluirá en la configuración del VirtualHost.
+Crear un archivo que se incluirá en la configuración del VirtualHost. (Puede ver un ejemplo de este archivo [aquí](extra.conf).
 
 ```bash
-$ sudo vim /etc/apache2/sites-available/user-ebox-gea.net/extra.conf
+$ sudo vim /etc/apache2/sites-available/gea.net/extra.conf
 ```
 
 Pegar dentro las siguientes directivas, reemplazando _<path-to-estudio>_ con lo que corresponda. El objetivo poder usar ```wsgi``` como daemon.

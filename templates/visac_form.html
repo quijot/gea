@@ -1,12 +1,21 @@
-{% extends "admin/base_site.html" %}
+{% extends "menu.html" %}
 
-{% block title %}Visaci&oacute;n{% endblock %}
+{# set menu in active mode #}
+{% block nav-visac %} class="active"{% endblock %}
+
+{% block title %}GEA | Solicitud de Visación{% endblock %}
 
 {% block content %}
-<form action="." method="post">{% csrf_token %}
-<table>
-{{ form.as_table }}
-</table>
-<input type="submit" value="Generar Visación" />
+<form class="form-horizontal col-lg-6" action="." method="post">{% csrf_token %}
+  <legend><i class="fa fa-sticky-note"></i> Generar Solicitud de Visación</legend>
+  <fieldset>
+    <div class="form-group">
+      <table class="table table-condensed table-hover">
+      {{ form.as_table }}
+      </table>
+      <button type="submit" class="btn btn-primary pull-right">Generar Nota</button>
+    </div>
+  </fieldset>
 </form>
 {% endblock %}
+{

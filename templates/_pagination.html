@@ -1,0 +1,27 @@
+{% block pagination %}
+{% load tags %}
+<!-- pagination -->
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="text-center">
+  <ul class="pagination pagination-sm">
+    {% if page_obj.has_previous %}
+    <li><a href="?{% url_replace request 'page' 1 %}">Primera</a></li>
+    <li><a href="?{% url_replace request 'page' page_obj.previous_page_number %}">&laquo; Anterior</a></li>
+    {% endif %}
+    {% for pg in page_obj.paginator.page_range %}
+      {% if page_obj.number < pg|add:"5"  and page_obj.number > pg|add:"-5" %}
+        {% if page_obj.number == pg %}
+    <li class="active"><a href="?{% url_replace request 'page' pg %}">{{ pg }}</a></li>
+        {% else %}
+    <li><a href="?{% url_replace request 'page' pg %}">{{ pg }}</a></li>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <li><a href="?{% url_replace request 'page' page_obj.next_page_number %}">Siguiente &raquo;</a></li>
+    <li><a href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">Última ({{ page_obj.paginator.num_pages }})</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock pagination %}

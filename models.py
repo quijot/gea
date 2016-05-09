@@ -1,6 +1,15 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.db import models
+
+
+def CapitalizePhrase(string):
+    phrase = ''
+    for word in string.split():
+        phrase = u'%s %s%s' % (phrase, word[0].upper(), word[1:].lower())
+    return phrase.strip()
 
 
 class CharNullField(models.CharField):  # subclass the CharField
@@ -13,7 +22,7 @@ class CharNullField(models.CharField):  # subclass the CharField
         # if an instance, just return the instance
         if isinstance(value, models.CharField):
             return value
-        if value == None:  # if the db has a NULL (==None in Python)
+        if value is None:  # if the db has a NULL (==None in Python)
             return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
@@ -37,7 +46,7 @@ class URLNullField(models.URLField):  # subclass the URLField
         # if an instance, just return the instance
         if isinstance(value, models.URLField):
             return value
-        if value == None:  # if the db has a NULL (==None in Python)
+        if value is None:  # if the db has a NULL (==None in Python)
             return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
@@ -61,7 +70,7 @@ class EmailNullField(models.EmailField):  # subclass the EmailField
         # if an instance, just return the instance
         if isinstance(value, models.EmailField):
             return value
-        if value == None:  # if the db has a NULL (==None in Python)
+        if value is None:  # if the db has a NULL (==None in Python)
             return u''  # convert it into the Django-friendly '' string
         else:
             return value  # otherwise, return just the value
@@ -80,7 +89,7 @@ class Antecedente(models.Model):
     expediente = models.ForeignKey(
         'Expediente', null=True, blank=True, default=None)
     expediente_modificado = models.ForeignKey(
-        'Expediente', null=True, blank=True, default=None, 
+        'Expediente', null=True, blank=True, default=None,
         related_name='expediente_modificado')
     inscripcion_numero = models.IntegerField(
         null=True, blank=True, default=None)
@@ -177,7 +186,7 @@ class Presupuesto(models.Model):
         ordering = ['expediente']
 
     def __unicode__(self):
-        return u'%s - $%s - %s' % (self.expediente, str(self.monto), 
+        return u'%s - $%s - %s' % (self.expediente, str(self.monto),
         str(self.fecha))
 
 
@@ -241,7 +250,7 @@ class Sd(models.Model):
     ds = models.ForeignKey(Ds, db_column='ds')
     sd = models.IntegerField()
     nombre = CharNullField(
-        max_length=50, null=True, blank=True, default=None, 
+        max_length=50, null=True, blank=True, default=None,
         verbose_name='nombre subdistrito')
 
     def subdistrito(self):
@@ -269,19 +278,18 @@ class Sd(models.Model):
 
 
 class Expediente(models.Model):
-    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
-    id = models.IntegerField(primary_key=True)
+#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
+    id = models.IntegerField('Expediente Nº', primary_key=True)
     fecha_plano = models.DateField(null=True, blank=True, default=None)
-    mensuras = models.SmallIntegerField(
-        null=True, blank=True, choices=MENSURAS, default=1, 
-        verbose_name='cantidad de mensuras')
-    inscripcion_numero = models.IntegerField(
-        unique=True, null=True, blank=True, default=None)
-    inscripcion_fecha = models.DateField(null=True, blank=True, default=None)
+#    mensuras = models.SmallIntegerField(
+#        null=True, blank=True, choices=MENSURAS, default=1,
+#        verbose_name='cantidad de mensuras')
+    inscripcion_numero = models.IntegerField('SCIT inscripción Nº',unique=True, null=True, blank=True, default=None)
+    inscripcion_fecha = models.DateField('Fecha inscripción', null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    orden_numero = models.IntegerField(null=True, blank=True, default=None)
-    orden_fecha = models.DateField(null=True, blank=True, default=None)
-    sin_inscripcion = models.BooleanField(default=False)
+    orden_numero = models.IntegerField('CoPA Expendiente Nº', null=True, blank=True, default=None)
+    orden_fecha = models.DateField('Fecha contrato', null=True, blank=True, default=None)
+#    sin_inscripcion = models.BooleanField(default=False)
     cancelado = models.BooleanField(default=False)
     cancelado_por = CharNullField(
         max_length=100, null=True, blank=True, default=None)
@@ -302,6 +310,14 @@ class Expediente(models.Model):
     def __unicode__(self):
         return u'%d' % self.id
 
+#    def save(self, force_insert=False, force_update=False):
+#        self.plano_ruta = None
+#        if self.inscripcion_numero:
+#            circ = self.expedientepartida_set.all().first().partida.sd.ds.dp.circunscripcion.id
+#            if circ:
+#                self.plano_ruta = "ftp://zentyal.estudio.lan/planos/%d/%06d.pdf" % (circ, self.inscripcion_numero)
+#        super(Expediente, self).save(force_insert, force_update)
+
 
 class ExpedienteLugar(models.Model):
     id = models.AutoField(primary_key=True)
@@ -318,11 +334,11 @@ class ExpedienteLugar(models.Model):
 
 
 class ExpedienteObjeto(models.Model):
-    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
+#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.AutoField(primary_key=True)
     expediente = models.ForeignKey(Expediente)
-    mensura = models.SmallIntegerField(
-        null=True, blank=True, choices=MENSURAS, default=1)
+#    mensura = models.SmallIntegerField(
+#        null=True, blank=True, choices=MENSURAS, default=1)
     objeto = models.ForeignKey('Objeto')
 
     class Meta:
@@ -331,7 +347,7 @@ class ExpedienteObjeto(models.Model):
         ordering = ['expediente', 'objeto']
 
     def __unicode__(self):
-        return self.objeto
+        return self.objeto.nombre
 
 
 class ExpedientePartida(models.Model):
@@ -352,15 +368,15 @@ class ExpedientePartida(models.Model):
 
 
 class ExpedientePersona(models.Model):
-    ITEMS = ((1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'),
-             (5, 'e'), (6, 'f'), (7, 'g'), (8, 'h'))
-    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
+#    ITEMS = ((1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'),
+#             (5, 'e'), (6, 'f'), (7, 'g'), (8, 'h'))
+#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.AutoField(primary_key=True)
     expediente = models.ForeignKey(Expediente)
-    mensura = models.SmallIntegerField(
-        null=True, blank=True, choices=MENSURAS, default=1)
-    item = models.SmallIntegerField(
-        null=True, blank=True, choices=ITEMS, default=None)
+#    mensura = models.SmallIntegerField(
+#        null=True, blank=True, choices=MENSURAS, default=1)
+#    item = models.SmallIntegerField(
+#        null=True, blank=True, choices=ITEMS, default=None)
     persona = models.ForeignKey('Persona')
     comitente = models.BooleanField(default=False)
     propietario = models.BooleanField(default=True)
@@ -378,10 +394,11 @@ class ExpedientePersona(models.Model):
         db_table = 'expediente_persona'
         verbose_name_plural = 'expediente_personas'
         ordering = [
-            'mensura', 'item', 'persona__apellidos', 'persona__nombres']
+            'persona__apellidos', 'persona__nombres']
+#            'mensura', 'item', 'persona__apellidos', 'persona__nombres']
 
     def __unicode__(self):
-       return u'%s %s' % (self.persona.apellidos, self.persona.nombres)
+       return u'%d - %s %s' % (self.expediente.id, self.persona.apellidos, self.persona.nombres)
 
 
 class ExpedienteProfesional(models.Model):
@@ -477,19 +494,19 @@ class Persona(models.Model):
     email = EmailNullField(
         max_length=50, unique=True, null=True, blank=True, default=None)
     cuit_cuil = CharNullField(
-        max_length=14, unique=True, null=True, blank=True, default=None, 
+        max_length=14, unique=True, null=True, blank=True, default=None,
         verbose_name='CUIT/CUIL/CDI')
     TIPO_DOC = ((0, 'DNI'), (1, 'LC'), (2, 'LE'), (3, 'Otro'))
     tipo_doc = models.SmallIntegerField(
-        null=True, blank=True, choices=TIPO_DOC, default=None)
+        null=True, blank=True, choices=TIPO_DOC, default=0)
     documento = models.IntegerField(
         unique=True, null=True, blank=True, default=None)
 
     def nombre_completo(self):
-        return u'%s %s' % (self.apellidos, self.nombres)
+        return (u'%s %s' % (self.apellidos, self.nombres)).strip()
 
     def show_tipo_doc(self):
-        if self.tipo_doc != '' and self.tipo_doc != None:
+        if self.tipo_doc != '' and self.tipo_doc is not None:
             return self.TIPO_DOC[self.tipo_doc][1]
     show_tipo_doc.short_description = 'Tipo doc'
     show_tipo_doc.admin_order_field = 'tipo_doc'
@@ -500,6 +517,13 @@ class Persona(models.Model):
 
     def __unicode__(self):
         return u'%s %s' % (self.apellidos, self.nombres)
+
+    def save(self, force_insert=False, force_update=False):
+        self.apellidos = self.apellidos.upper().strip()
+        self.apellidos_alternativos = self.apellidos_alternativos.upper().strip()
+        self.nombres = CapitalizePhrase(self.nombres)
+        self.nombres_alternativos = CapitalizePhrase(self.nombres_alternativos)
+        super(Persona, self).save(force_insert, force_update)
 
 
 class Profesional(models.Model):
@@ -518,7 +542,7 @@ class Profesional(models.Model):
     email = EmailNullField(
         max_length=50, unique=True, null=True, blank=True, default=None)
     cuit_cuil = CharNullField(
-        max_length=14, unique=True, null=True, blank=True, default=None, 
+        max_length=14, unique=True, null=True, blank=True, default=None,
         verbose_name='DNI/CUIT/CUIL/CDI')
     habilitado = models.BooleanField(default=True)
     jubilado = models.BooleanField(default=False)
@@ -534,6 +558,11 @@ class Profesional(models.Model):
 
     def __unicode__(self):
         return u'%s %s' % (self.apellidos, self.nombres)
+
+    def save(self, force_insert=False, force_update=False):
+        self.apellidos = self.apellidos.upper().strip()
+        self.nombres = CapitalizePhrase(self.nombres)
+        super(Persona, self).save(force_insert, force_update)
 
 
 class Titulo(models.Model):

@@ -1,19 +1,19 @@
 {% extends "menu.html" %}
 
 {# set menu in active mode #}
-{% block nav-solic %} class="active"{% endblock %}
+{% block nav-carat %} class="active"{% endblock %}
 
-{% block title %}GEA | Solicitud de Inscripción SCIT{% endblock %}
+{% block title %}GEA | Carátula{% endblock %}
 
 {% block content %}
 <form class="form-horizontal col-lg-6" action="." method="post">{% csrf_token %}
-  <legend><i class="fa fa-sticky-note"></i> Generar Solicitud de Inscripción SCIT</legend>
+  <legend><i class="fa fa-sticky-note"></i> Generar Carátula del Plano de Mensura</legend>
   <fieldset>
     <div class="form-group">
       <table class="table table-condensed table-hover">
       {{ form.as_table }}
       </table>
-      <button type="submit" class="btn btn-primary pull-right">Generar Nota</button>
+      <button type="submit" class="btn btn-primary pull-right">Generar Carátula</button>
     </div>
   </fieldset>
 </form>

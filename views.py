@@ -2,28 +2,295 @@
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
 
-# Create your views here.
-
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import Context, loader
-from gea.models import Expediente
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import get_object_or_404, render_to_response, RequestContext
+from django.shortcuts import get_object_or_404, render_to_response, \
+    RequestContext
 
 from django import forms
-from django.shortcuts import render
+from django.db.models import Q, Count
+
+from .models import Expediente, Persona, Objeto, Lugar, Partida, CatastroLocal
+from .gea_vars import CP, CP_dict, PROV, CIRC, NOTA, LUGAR, Lugar_dict
+
+from django.views.generic import TemplateView, ListView, DetailView
 
 ftp_url = 'ftp://zentyal.estudio.lan'
 
-def index(request):
-    template = loader.get_template('portada.html')
-    context  = Context({
+
+class Home(TemplateView):
+    template_name = 'portada.html'
+
+
+class CounterMixin(object):
+
+    def get_context_data(self, **kwargs):
+        context = super(CounterMixin, self).get_context_data(**kwargs)
+        context['count'] = self.get_queryset().count()
+        return context
+
+
+class NumeroSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(NumeroSearchMixin, self).get_queryset()
+        q = self.request.GET.get('search')
+        if q:
+            return queryset.filter(
+                Q(id__contains=q) |
+                Q(inscripcion_numero__contains=q)
+            )
+        return queryset
+
+
+class ExpedienteMixin(object):
+
+    def get_queryset(self):
+        qset = super(ExpedienteMixin, self).get_queryset()
+        q = self.request.GET.get('pendiente')
+        if q:  # orden pendiente
+            qset = qset.filter(
+                Q(inscripcion_numero__isnull=q) &
+                Q(orden_numero__isnull=not q)
+            )
+        q = self.request.GET.get('inscripto')
+        if q:  # plano inscripto
+            qset = qset.filter(inscripcion_numero__isnull=not q)
+        q = self.request.GET.get('cancelado')
+        if q:  # expediente cancelado
+            qset = qset.filter(cancelado=q)
+        q = self.request.GET.get('duplicado')
+        if q:  # duplicado
+            qset = qset.filter(duplicado=q)
+        q = self.request.GET.get('sin_inscr')
+        if q:  # duplicado
+            qset = qset.filter(sin_inscripcion=q)
+        return qset
+
+
+class ExpedienteList(CounterMixin, NumeroSearchMixin,
+  ExpedienteMixin, ListView):
+    template_name = 'expediente_list.html'
+    model = Expediente
+    paginate_by = 10
+
+    def get_paginate_by(self, queryset):
+        """
+        Paginate by specified value in querystring, or use default class
+        property value.
+        """
+        return self.request.GET.get('paginate_by', self.paginate_by)
+
+
+class ExpedienteDetail(DetailView):
+    template_name = 'expediente_detail.html'
+    model = Expediente
+
+
+class NombreSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(NombreSearchMixin, self).get_queryset()
+        q = self.request.GET.get('search')
+        if q:
+            q = q.split(' ')
+            for w in q:
+                queryset = queryset.filter(
+                    Q(nombres__icontains=w) |
+                    Q(apellidos__icontains=w) |
+                    Q(nombres_alternativos__icontains=w) |
+                    Q(apellidos_alternativos__icontains=w)
+                )
+        return queryset
+
+
+class PersonaList(CounterMixin, NombreSearchMixin, ListView):
+    template_name = 'persona_list.html'
+    model = Persona
+    paginate_by = 50
+
+
+class PersonaDetail(DetailView):
+    template_name = 'persona_detail.html'
+    model = Persona
+
+
+def listado_alfabetico(request, inicial=None):
+    # datasets
+    pers_list = Persona.objects.all().order_by('apellidos', 'nombres')
+    # filtering
+    if inicial is not None:
+        pers_list = pers_list.filter(apellidos__istartswith=inicial)
+    # pagination
+    paginator = Paginator(pers_list, 50)
+    page = request.GET.get('page')
+    try:
+        personas = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        personas = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        personas = paginator.page(paginator.num_pages)
+    template = loader.get_template('listado_alfabetico.html')
+    context = Context({
+        'cl': personas,
+        'inicial': inicial,
     })
     return HttpResponse(template.render(context))
 
-def listado_comun(request):
-    exp_list   = Expediente.objects.order_by('-id')
-    paginator = Paginator(exp_list, 20)
+
+class LugarSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(LugarSearchMixin, self).get_queryset()
+        q = self.request.GET.get('lugar')
+        if q:
+            return queryset.filter(expedientelugar__lugar__nombre=q)
+        return queryset
+
+
+class SeccionSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(SeccionSearchMixin, self).get_queryset()
+        q = self.request.GET.get('seccion')
+        if q:
+            return queryset.filter(expedientelugar__catastrolocal__seccion=q)
+        return queryset
+
+
+class ManzanaSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(ManzanaSearchMixin, self).get_queryset()
+        q = self.request.GET.get('manzana')
+        if q:
+            return queryset.filter(expedientelugar__catastrolocal__manzana=q)
+        return queryset
+
+
+class ParcelaSearchMixin(object):
+
+    def get_queryset(self):
+        queryset = super(ParcelaSearchMixin, self).get_queryset()
+        q = self.request.GET.get('parcela')
+        if q:
+            return queryset.filter(expedientelugar__catastrolocal__parcela=q)
+        return queryset
+
+
+class CLMixin(object):
+
+    def get_queryset(self):
+        qset = super(CLMixin, self).get_queryset()
+        q = self.request.GET.get('lugar')
+        if q is not None:
+            qset = qset.filter(expedientelugar__lugar__nombre=q).distinct()
+        q = self.request.GET.get('seccion')
+        if q is not None:
+            qset = qset.filter(expedientelugar__catastrolocal__seccion=q)
+        q = self.request.GET.get('manzana')
+        if q is not None:
+            qset = qset.filter(expedientelugar__catastrolocal__manzana=q)
+        q = self.request.GET.get('parcela')
+        if q is not None:
+            qset = qset.filter(expedientelugar__catastrolocal__parcela=q)
+        return qset
+
+
+#class CatastroLocalList(CounterMixin, LugarSearchMixin, SeccionSearchMixin,
+#  ManzanaSearchMixin, ParcelaSearchMixin, ListView):
+class CatastroLocalList(CounterMixin, CLMixin, ListView):
+    template_name = 'catastros_locales.html'
+    model = Expediente
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super(CatastroLocalList, self).get_context_data(**kwargs)
+        l = self.request.GET.get('lugar')
+        context['lugar'] = l
+        s = self.request.GET.get('seccion')
+        context['seccion'] = s
+        m = self.request.GET.get('manzana')
+        context['manzana'] = m
+        p = self.request.GET.get('parcela')
+        context['parcela'] = p
+        context['lugares'] = Lugar.objects.values_list('nombre',
+          flat=True).order_by('nombre')
+        context['secciones'] = CatastroLocal.objects.filter(
+          expediente_lugar__lugar__nombre=l).values_list('seccion',
+          flat=True).distinct().order_by('seccion')
+        context['manzanas'] = CatastroLocal.objects.filter(
+          expediente_lugar__lugar__nombre=l).filter(seccion=s).values_list(
+          'manzana', flat=True).distinct().order_by('manzana')
+        context['parcelas'] = CatastroLocal.objects.filter(
+          expediente_lugar__lugar__nombre=l).filter(Q(seccion=s) &
+          Q(manzana=m)).values_list(
+          'parcela', flat=True).distinct().order_by('parcela')
+        return context
+
+
+def catastros_locales(request):
+    return parcelas(request)
+
+
+def lugares(request, l):
+    return parcelas(request, l)
+
+
+def secciones(request, l, s):
+    return parcelas(request, l, s)
+
+
+def manzanas(request, l, s, m):
+    return parcelas(request, l, s, m)
+
+
+def parcelas(request, l=None, s='all', m='all', p='all'):
+    # datasets
+    lugares = Lugar.objects.values_list('nombre', flat=True).filter(
+        Q(expedientelugar__catastrolocal__seccion__isnull=False) |
+        Q(expedientelugar__catastrolocal__manzana__isnull=False) |
+        Q(expedientelugar__catastrolocal__parcela__isnull=False)
+        ).distinct().order_by('nombre')
+    exp_list = Expediente.objects.all().distinct().order_by(
+        'expedientelugar__catastrolocal__seccion',
+        'expedientelugar__catastrolocal__manzana',
+        'expedientelugar__catastrolocal__parcela')
+    secciones = CatastroLocal.objects.all()
+    manzanas = CatastroLocal.objects.all()
+    parcelas = CatastroLocal.objects.all()
+    # filtering
+    exp_list = exp_list.filter(expedientelugar__lugar__nombre=l)
+    secciones = secciones.filter(expediente_lugar__lugar__nombre=l)
+    manzanas = manzanas.filter(expediente_lugar__lugar__nombre=l)
+    parcelas = parcelas.filter(expediente_lugar__lugar__nombre=l)
+    if s is 'None':
+        s = None
+    if s != 'all':
+        exp_list = exp_list.filter(expedientelugar__catastrolocal__seccion=s)
+        manzanas = manzanas.filter(seccion=s)
+        parcelas = parcelas.filter(seccion=s)
+    if m is 'None':
+        m = None
+    if m != 'all':
+        exp_list = exp_list.filter(expedientelugar__catastrolocal__manzana=m)
+        parcelas = parcelas.filter(manzana=m)
+    if p is 'None':
+        p = None
+    if p != 'all':
+        exp_list = exp_list.filter(expedientelugar__catastrolocal__parcela=p)
+    # ordering
+    secciones = secciones.values_list(
+        'seccion', flat=True).distinct().order_by('seccion')
+    manzanas = manzanas.values_list(
+        'manzana', flat=True).distinct().order_by('manzana')
+    parcelas = parcelas.values_list(
+        'parcela', flat=True).distinct().order_by('parcela')
+    # pagination
+    paginator = Paginator(exp_list, 10)
     page = request.GET.get('page')
     try:
         expedientes = paginator.page(page)
@@ -33,1029 +300,110 @@ def listado_comun(request):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         expedientes = paginator.page(paginator.num_pages)
-    template = loader.get_template('listado_comun.html')
-    context  = Context({
+    template = loader.get_template('listado_catastros_locales.html')
+    context = Context({
         'cl': expedientes,
+        'lugares': lugares,
+        'secciones': secciones,
+        'manzanas': manzanas,
+        'parcelas': parcelas,
+        'lugar': l,
+        'seccion': s,
+        'manzana': m,
+        'parcela': p,
     })
     return HttpResponse(template.render(context))
 
-#
-# Solicitud de inscripcion SCIT
-#
-CP = (
-  (u"CABA", u"RECOLETA, CABA - C1119"),
-  (u"22 DE MAYO", u"22 DE MAYO - S2124XAD"),
-  (u"4 DE FEBRERO", u"4 DE FEBRERO - S2732XAA"),
-  (u"AARÓN CASTELLANOS", u"AARÓN CASTELLANOS - S6106"),
-  (u"ABIPONES", u"ABIPONES - S3042XAA"),
-  (u"ACEBAL", u"ACEBAL - S2109"),
-  (u"ACHAVAL RODRIGUEZ", u"ACHAVAL RODRIGUEZ - S2344XAA"),
-  (u"ADOLFO ALSINA", u"ADOLFO ALSINA - S2311XAC"),
-  (u"AERO CLUB ROSARIO", u"AERO CLUB ROSARIO - S2132XAC"),
-  (u"AGUARÁ GRANDE", u"AGUARÁ GRANDE - S3071XAA"),
-  (u"ALBARELLOS", u"ALBARELLOS - S2101"),
-  (u"ALCORTA", u"ALCORTA - S2117"),
-  (u"ALDAO", u"ALDAO - S2214"),
-  (u"ALEJANDRA", u"ALEJANDRA - S3051"),
-  (u"ALLENDE", u"ALLENDE - S3550XAE"),
-  (u"ALTO VERDE", u"ALTO VERDE - S3001XAM"),
-  (u"ÁLVAREZ", u"ÁLVAREZ - S2107"),
-  (u"ALVEAR", u"ALVEAR - S2126"),
-  (u"AMBROSETTI", u"AMBROSETTI - S2352"),
-  (u"AMENÁBAR", u"AMENÁBAR - S6103"),
-  (u"ANDINO", u"ANDINO - S2214"),
-  (u"ANGEL GALLARDO", u"ANGEL GALLARDO - S3014"),
-  (u"ANGÉLICA", u"ANGÉLICA - S2303"),
-  (u"ANGELONI", u"ANGELONI - S3048"),
-  (u"ANTONIO PINI", u"ANTONIO PINI - S3061XAI"),
-  (u"AREQUITO", u"AREQUITO - S2183XAB"),
-  (u"ARIJON", u"ARIJON - S2242XAA"),
-  (u"ARMINDA", u"ARMINDA - S2119"),
-  (u"ARMSTRONG", u"ARMSTRONG - S2508"),
-  (u"AROCENA", u"AROCENA - S2242"),
-  (u"AROMOS", u"AROMOS - S3036XAB"),
-  (u"ARRASCAETA", u"ARRASCAETA - S3046XAK"),
-  (u"ARROYO AGUIAR", u"ARROYO AGUIAR - S3014"),
-  (u"ARROYO CEIBAL", u"ARROYO CEIBAL - S3575"),
-  (u"ARROYO DEL REY", u"ARROYO DEL REY - S3565XAA"),
-  (u"ARROYO LEYES", u"ARROYO LEYES - S3001XAP"),
-  (u"ARROYO SECO", u"ARROYO SECO - S2128"),
-  (u"ARRUFÓ", u"ARRUFÓ - S2344"),
-  (u"ARSENAL DE GUERRA SAN LORENZO", u"ARSENAL DE GUERRA SAN LORENZO - S2156XAB"),
-  (u"ARTEAGA", u"ARTEAGA - S2187"),
-  (u"ASCOCHINGAS", u"ASCOCHINGAS - S3014XAG"),
-  (u"ASUNCION MARIA", u"ASUNCION MARIA - S3040XAG"),
-  (u"ATALIVA", u"ATALIVA - S2307"),
-  (u"AURELIA", u"AURELIA - S2318"),
-  (u"AURELIA NORTE", u"AURELIA NORTE - S2318XAA"),
-  (u"AURELIA SUD", u"AURELIA SUD - S2318XAB"),
-  (u"AVELLANEDA", u"AVELLANEDA - S3561"),
-  (u"AVENA", u"AVENA - S2449XAA"),
-  (u"AVICHUNCHO", u"AVICHUNCHO - S3040XAC"),
-  (u"BAJO LAS TUNAS", u"BAJO LAS TUNAS - S3017XAA"),
-  (u"BARLETT", u"BARLETT - S2175XAA"),
-  (u"BARRANCAS", u"BARRANCAS - S2246"),
-  (u"BARRANQUITAS", u"BARRANQUITAS - S3000XAD"),
-  (u"BARRIO BELGRANO ORTIZ", u"BARRIO BELGRANO ORTIZ - S2440XAA"),
-  (u"BARRIO CAIMA", u"BARRIO CAIMA - S2242"),
-  (u"BARROS PAZOS", u"BARROS PAZOS - S3569"),
-  (u"BAUER Y SIGEL", u"BAUER Y SIGEL - S2403XAA"),
-  (u"BEALISTOCK", u"BEALISTOCK - S2326XAE"),
-  (u"BELLA ITALIA", u"BELLA ITALIA - S2301"),
-  (u"BERABEVÚ", u"BERABEVÚ - S2639"),
-  (u"BERNA", u"BERNA - S3569"),
-  (u"BERNARD", u"BERNARD - S2119XAA"),
-  (u"BERNARDO DE IRIGOYEN", u"BERNARDO DE IRIGOYEN - S2248"),
-  (u"BERRETTA", u"BERRETTA - S2501XAC"),
-  (u"BIGAND", u"BIGAND - S2177"),
-  (u"BOCA P 25", u"BOCA P 25 - S2600XAB"),
-  (u"BOMBAL", u"BOMBAL - S2179"),
-  (u"BORGHI", u"BORGHI - S2156XAC"),
-  (u"BOSSI", u"BOSSI - S2326"),
-  (u"BOUQUET", u"BOUQUET - S2523"),
-  (u"BUSTINZA", u"BUSTINZA - S2501"),
-  (u"CABAL", u"CABAL - S3036"),
-  (u"CABAÑA EL CISNE", u"CABAÑA EL CISNE - S2322"),
-  (u"CABEZA DE CHANCHO", u"CABEZA DE CHANCHO - S3061XAC"),
-  (u"CACIQUE ARIACAIQUÍN", u"CACIQUE ARIACAIQUÍN - S3041XAB"),
-  (u"CAFFERATA", u"CAFFERATA - S2643"),
-  (u"CALCHAQUÍ", u"CALCHAQUÍ - S3050"),
-  (u"CALCHINES", u"CALCHINES - S3001XAA"),
-  (u"CAMINERA GENERAL LÓPEZ", u"CAMINERA GENERAL LÓPEZ - S2720XAA"),
-  (u"CAMINO MONTE FLORES", u"CAMINO MONTE FLORES - S2126XAA"),
-  (u"CAMPO ANDINO", u"CAMPO ANDINO - S3021"),
-  (u"CAMPO BERRAZ", u"CAMPO BERRAZ - S3046XAL"),
-  (u"CAMPO BOTTO", u"CAMPO BOTTO - S2345XAA"),
-  (u"CAMPO BRARDA", u"CAMPO BRARDA - S2248XAB"),
-  (u"CAMPO CALVO", u"CAMPO CALVO - S2123XAA"),
-  (u"CAMPO CARIGNANO", u"CAMPO CARIGNANO - S2248XAC"),
-  (u"CAMPO CASTRO", u"CAMPO CASTRO - S2148XAB"),
-  (u"CAMPO CHARO", u"CAMPO CHARO - S2512XAC"),
-  (u"CAMPO CLUCELLAS", u"CAMPO CLUCELLAS - S2407XAA"),
-  (u"CAMPO COUBERT", u"CAMPO COUBERT - S3056XAA"),
-  (u"CAMPO CRENNA", u"CAMPO CRENNA - S2185XAA"),
-  (u"CAMPO CRESPO", u"CAMPO CRESPO - S3001XAQ"),
-  (u"CAMPO DARATTI", u"CAMPO DARATTI - S2307XAA"),
-  (u"CAMPO DEL MEDIO", u"CAMPO DEL MEDIO - S3001XAB"),
-  (u"CAMPO EL ARAZA", u"CAMPO EL ARAZA - S3569XAA"),
-  (u"CAMPO EL MATACO", u"CAMPO EL MATACO - S2342XAA"),
-  (u"CAMPO FAGGIANO", u"CAMPO FAGGIANO - S2440XAB"),
-  (u"CAMPO FURRER", u"CAMPO FURRER - S3569XAB"),
-  (u"CAMPO GALLOSO", u"CAMPO GALLOSO - S2212XAA"),
-  (u"CAMPO GARABATO", u"CAMPO GARABATO - S3572XAA"),
-  (u"CAMPO GARAY", u"CAMPO GARAY - S3066XAB"),
-  (u"CAMPO GARCIA", u"CAMPO GARCIA - S2240XAC"),
-  (u"CAMPO GENERO", u"CAMPO GENERO - S2248XAD"),
-  (u"CAMPO GIMBATTI", u"CAMPO GIMBATTI - S2508XAB"),
-  (u"CAMPO GIMENEZ", u"CAMPO GIMENEZ - S2253XAA"),
-  (u"CAMPO GOLA", u"CAMPO GOLA - S3516XAA"),
-  (u"CAMPO GRANDE", u"CAMPO GRANDE - S3575XAF"),
-  (u"CAMPO HORQUESCO", u"CAMPO HORQUESCO - S2144XAB"),
-  (u"CAMPO HUBER", u"CAMPO HUBER - S3555XAB"),
-  (u"CAMPO ITURRASPE", u"CAMPO ITURRASPE - S3001XAC"),
-  (u"CAMPO LA AMISTAD", u"CAMPO LA AMISTAD - S2508XAA"),
-  (u"CAMPO LA PAZ", u"CAMPO LA PAZ - S2512XAB"),
-  (u"CAMPO LA RIVIERE", u"CAMPO LA RIVIERE - S2505XAA"),
-  (u"CAMPO LEHMAN", u"CAMPO LEHMAN - S3014XAA"),
-  (u"CAMPO MAGNIN", u"CAMPO MAGNIN - S3011XAC"),
-  (u"CAMPO MEDINA", u"CAMPO MEDINA - S2142XAA"),
-  (u"CAMPO MONTE LA VIRUELA", u"CAMPO MONTE LA VIRUELA - S3551XAK"),
-  (u"CAMPO MOURE", u"CAMPO MOURE - S2240XAD"),
-  (u"CAMPO NUEVO", u"CAMPO NUEVO - S2639XAA"),
-  (u"CAMPO PALETTA", u"CAMPO PALETTA - S2206XAA"),
-  (u"CAMPO PESOA", u"CAMPO PESOA - S2173XAA"),
-  (u"CAMPO QUIÑONES", u"CAMPO QUIÑONES - S2258"),
-  (u"CAMPO QUIRNO", u"CAMPO QUIRNO - S2607XAA"),
-  (u"CAMPO RAFFO", u"CAMPO RAFFO - S2216XAA"),
-  (u"CAMPO RAMSEYER", u"CAMPO RAMSEYER - S3572XAE"),
-  (u"CAMPO REDONDO", u"CAMPO REDONDO - S3581XAF"),
-  (u"CAMPO RODRIGUEZ", u"CAMPO RODRIGUEZ - S2255XAA"),
-  (u"CAMPO ROMERO", u"CAMPO ROMERO - S2407XAB"),
-  (u"CAMPO RUEDA", u"CAMPO RUEDA - S2109XAA"),
-  (u"CAMPO SAN JOSÉ", u"CAMPO SAN JOSÉ - S3060XAF"),
-  (u"CAMPO SANTA ISABEL", u"CAMPO SANTA ISABEL - S2505XAB"),
-  (u"CAMPO SANTO DOMINGO", u"CAMPO SANTO DOMINGO - S3020XAA"),
-  (u"CAMPO SIETE PROVINCIAS", u"CAMPO SIETE PROVINCIAS - S3575XAG"),
-  (u"CAMPO TORQUINSTON", u"CAMPO TORQUINSTON - S2403XAB"),
-  (u"CAMPO UBAJO", u"CAMPO UBAJO - S3560XAF"),
-  (u"CAMPO VERGE", u"CAMPO VERGE - S3516XAC"),
-  (u"CAMPO YAGUARETE", u"CAMPO YAGUARETE - S3586XAC"),
-  (u"CAMPO ZAVALLA", u"CAMPO ZAVALLA - S3045XAA"),
-  (u"CAMPO ZURBRIGGEN", u"CAMPO ZURBRIGGEN - S2407XAC"),
-  (u"CANDELARIA SUD", u"CANDELARIA SUD - S2170XAA"),
-  (u"CANDIOTI", u"CANDIOTI - S3018"),
-  (u"CAÑADA DE GOMEZ", u"CAÑADA DE GOMEZ - S2500"),
-  (u"CAÑADA DEL UCLE", u"CAÑADA DEL UCLE - S2635"),
-  (u"CAÑADA OMBU", u"CAÑADA OMBU - S3551"),
-  (u"CAÑADA RICA", u"CAÑADA RICA - S2105"),
-  (u"CAÑADA ROSQUIN", u"CAÑADA ROSQUIN - S2454"),
-  (u"CAÑADITA", u"CAÑADITA - S3052"),
-  (u"CAPILLA GUADALUPE NORTE", u"CAPILLA GUADALUPE NORTE - S3574XAA"),
-  (u"CAPILLA SAN JOSÉ", u"CAPILLA SAN JOSÉ - S2301XAA"),
-  (u"CAPITÁN BERMÚDEZ", u"CAPITÁN BERMÚDEZ - S2154"),
-  (u"CAPIVARA", u"CAPIVARA - S2311XAF"),
-  (u"CARAGUATAY", u"CARAGUATAY - S3557XAA"),
-  (u"CARCARAÑA", u"CARCARAÑA - S2138"),
-  (u"CARCEL MODELO CORONDA", u"CARCEL MODELO CORONDA - S2240XAA"),
-  (u"CARLOS DOSE", u"CARLOS DOSE - S2635XAA"),
-  (u"CARLOS PELLEGRINI", u"CARLOS PELLEGRINI - S2453"),
-  (u"CARMEN", u"CARMEN - S2618"),
-  (u"CARMEN DEL SAUCE", u"CARMEN DEL SAUCE - S2109"),
-  (u"CARRERAS", u"CARRERAS - S2729"),
-  (u"CARRIZALES", u"CARRIZALES - S2218XAA"),
-  (u"CASABLANCA", u"CASABLANCA - S2317"),
-  (u"CASALEGNO", u"CASALEGNO - S2248XAA"),
-  (u"CASAS", u"CASAS - S2148"),
-  (u"CASILDA", u"CASILDA - S2170"),
-  (u"CASTELAR", u"CASTELAR - S2401"),
-  (u"CAVOUR", u"CAVOUR - S3081"),
-  (u"CAYASTÁ", u"CAYASTÁ - S3001"),
-  (u"CAYASTACITO", u"CAYASTACITO - S3038"),
-  (u"CENTENO", u"CENTENO - S2148"),
-  (u"CEPEDA", u"CEPEDA - S2105"),
-  (u"CERANA", u"CERANA - S2202XAA"),
-  (u"CERES", u"CERES - S2340"),
-  (u"CERRITO", u"CERRITO - S3550XAD"),
-  (u"CHABÁS", u"CHABÁS - S2173"),
-  (u"CHAÑAR LADEADO", u"CHAÑAR LADEADO - S2643"),
-  (u"CHAPUY", u"CHAPUY - S2603"),
-  (u"CHATEAUBRIAND", u"CHATEAUBRIAND - S2600XAC"),
-  (u"CHOVET", u"CHOVET - S2633"),
-  (u"CICARELLI", u"CICARELLI - S2500XAA"),
-  (u"CLARKE", u"CLARKE - S2218"),
-  (u"CLASON", u"CLASON - S2146"),
-  (u"CLUCELLAS", u"CLUCELLAS - S2407"),
-  (u"COLASTINÉ", u"COLASTINÉ - S3001XAN"),
-  (u"COLASTINÉ NORTE", u"COLASTINÉ NORTE - S3001XAO"),
-  (u"COLMENA", u"COLMENA - S3551XAM"),
-  (u"COLONIA ADOLFO ALSINA", u"COLONIA ADOLFO ALSINA - S3029XAA"),
-  (u"COLONIA ALDAO", u"COLONIA ALDAO - S2317XAB"),
-  (u"COLONIA ALTHUAUS", u"COLONIA ALTHUAUS - S3572XAB"),
-  (u"COLONIA ANA", u"COLONIA ANA - S2345XAB"),
-  (u"COLONIA BELGRANO", u"COLONIA BELGRANO - S2257"),
-  (u"COLONIA BELLA ITALIA", u"COLONIA BELLA ITALIA - S2300XAD"),
-  (u"COLONIA BERLIN", u"COLONIA BERLIN - S2313XAG"),
-  (u"COLONIA BICHA", u"COLONIA BICHA - S2317XAC"),
-  (u"COLONIA BIGAND", u"COLONIA BIGAND - S2317XAD"),
-  (u"COLONIA CALIFORNIA", u"COLONIA CALIFORNIA - S3005XAA"),
-  (u"COLONIA CAMPO BOTTO", u"COLONIA CAMPO BOTTO - S3036XAA"),
-  (u"COLONIA CANDELARIA", u"COLONIA CANDELARIA - S2170XAB"),
-  (u"COLONIA CASTELLANOS", u"COLONIA CASTELLANOS - S2301"),
-  (u"COLONIA CELLO", u"COLONIA CELLO - S2405XAA"),
-  (u"COLONIA CLARA", u"COLONIA CLARA - S3025XAD"),
-  (u"COLONIA CLODOMIRA", u"COLONIA CLODOMIRA - S2123XAB"),
-  (u"COLONIA CORONDINA", u"COLONIA CORONDINA - S2240XAB"),
-  (u"COLONIA DOLORES", u"COLONIA DOLORES - S3045XAE"),
-  (u"COLONIA DOS ROSAS Y LA LEGUA", u"COLONIA DOS ROSAS Y LA LEGUA - S2349"),
-  (u"COLONIA DURAN", u"COLONIA DURAN - S3553XAB"),
-  (u"COLONIA EL CARMEN", u"COLONIA EL CARMEN - S2138XAA"),
-  (u"COLONIA EL OCHENTA", u"COLONIA EL OCHENTA - S3042XAB"),
-  (u"COLONIA EL SIMBOL", u"COLONIA EL SIMBOL - S3074XAC"),
-  (u"COLONIA EL TOBA", u"COLONIA EL TOBA - S3553XAC"),
-  (u"COLONIA EL VEINTICINCO", u"COLONIA EL VEINTICINCO - S3560XAB"),
-  (u"COLONIA ELLA", u"COLONIA ELLA - S3572XAC"),
-  (u"COLONIA ESCRIBANO", u"COLONIA ESCRIBANO - S2103XAB"),
-  (u"COLONIA FERNANDEZ", u"COLONIA FERNANDEZ - S2639XAB"),
-  (u"COLONIA FRANCESA", u"COLONIA FRANCESA - S3005XAB"),
-  (u"COLONIA GOMEZ", u"COLONIA GOMEZ - S2639XAC"),
-  (u"COLONIA HANSEN", u"COLONIA HANSEN - S2637XAA"),
-  (u"COLONIA HARDY", u"COLONIA HARDY - S3592"),
-  (u"COLONIA INDEPENDENCIA", u"COLONIA INDEPENDENCIA - S3066XAC"),
-  (u"COLONIA JOSEFINA", u"COLONIA JOSEFINA - S2403"),
-  (u"COLONIA LA BLANCA", u"COLONIA LA BLANCA - S3052XAB"),
-  (u"COLONIA LA CATALANA", u"COLONIA LA CATALANA - S2637"),
-  (u"COLONIA LA COSTA", u"COLONIA LA COSTA - S2170XAC"),
-  (u"COLONIA LA MARIA", u"COLONIA LA MARIA - S3056XAC"),
-  (u"COLONIA LA MORA", u"COLONIA LA MORA - S3045XAB"),
-  (u"COLONIA LA NEGRA", u"COLONIA LA NEGRA - S3054XAF"),
-  (u"COLONIA LA NICOLASA", u"COLONIA LA NICOLASA - S3056XAB"),
-  (u"COLONIA LA NUEVA", u"COLONIA LA NUEVA - S3081XAA"),
-  (u"COLONIA LA PALENCIA", u"COLONIA LA PALENCIA - S2639"),
-  (u"COLONIA LA PELLEGRINI", u"COLONIA LA PELLEGRINI - S2639"),
-  (u"COLONIA LA PENCA", u"COLONIA LA PENCA - S3045XAF"),
-  (u"COLONIA LA YERBA", u"COLONIA LA YERBA - S2451XAB"),
-  (u"COLONIA LAGO DI COMO", u"COLONIA LAGO DI COMO - S2187XAA"),
-  (u"COLONIA LOS ZAPALLOS", u"COLONIA LOS ZAPALLOS - S3003XAA"),
-  (u"COLONIA MACKINLAY", u"COLONIA MACKINLAY - S2347XAA"),
-  (u"COLONIA MALHMAN SUD", u"COLONIA MALHMAN SUD - S2347XAB"),
-  (u"COLONIA MANUEL MENCHACA", u"COLONIA MANUEL MENCHACA - S3046XAM"),
-  (u"COLONIA MARGARITA", u"COLONIA MARGARITA - S2443XAA"),
-  (u"COLONIA MASCÍAS", u"COLONIA MASCÍAS - S3001XAW"),
-  (u"COLONIA MATILDE", u"COLONIA MATILDE - S3013XAA"),
-  (u"COLONIA MAUÁ", u"COLONIA MAUÁ - S2311XAA"),
-  (u"COLONIA MÉDICI", u"COLONIA MÉDICI - S2144XAA"),
-  (u"COLONIA MONTEFIORE", u"COLONIA MONTEFIORE - S2341XAA"),
-  (u"COLONIA MORGAN", u"COLONIA MORGAN - S2609XAA"),
-  (u"COLONIA NUEVA NARCISO", u"COLONIA NUEVA NARCISO - S3001XAD"),
-  (u"COLONIA ORTIZ", u"COLONIA ORTIZ - S2313XAB"),
-  (u"COLONIA PIAGGIO", u"COLONIA PIAGGIO - S2252XAA"),
-  (u"COLONIA PIAMONTESA", u"COLONIA PIAMONTESA - S2639XAH"),
-  (u"COLONIA PUJOL", u"COLONIA PUJOL - S3080XAB"),
-  (u"COLONIA REINA MARGARITA", u"COLONIA REINA MARGARITA - S2309XAA"),
-  (u"COLONIA RIPAMONTI", u"COLONIA RIPAMONTI - S2349XAA"),
-  (u"COLONIA ROSA", u"COLONIA ROSA - S2347"),
-  (u"COLONIA SAGER", u"COLONIA SAGER - S3553XAD"),
-  (u"COLONIA SAN ANTONIO", u"COLONIA SAN ANTONIO - S2301"),
-  (u"COLONIA SAN FRANCISCO", u"COLONIA SAN FRANCISCO - S2527XAA"),
-  (u"COLONIA SAN JOAQUÍN", u"COLONIA SAN JOAQUÍN - S3001XAE"),
-  (u"COLONIA SAN MANUEL", u"COLONIA SAN MANUEL - S3563XAA"),
-  (u"COLONIA SAN ROQUE", u"COLONIA SAN ROQUE - S3005XAI"),
-  (u"COLONIA SANTA ANITA", u"COLONIA SANTA ANITA - S2451XAA"),
-  (u"COLONIA SANTA CATALINA", u"COLONIA SANTA CATALINA - S3572XAD"),
-  (u"COLONIA SANTA LUCÍA", u"COLONIA SANTA LUCÍA - S2609XAB"),
-  (u"COLONIA SANTA NATALIA", u"COLONIA SANTA NATALIA - S2639XAI"),
-  (u"COLONIA SILVA", u"COLONIA SILVA - S3042XAC"),
-  (u"COLONIA TACURALES", u"COLONIA TACURALES - S2324XAA"),
-  (u"COLONIA TERESA", u"COLONIA TERESA - S3005XAC"),
-  (u"COLONIA TOSCANA PRIMERA", u"COLONIA TOSCANA PRIMERA - S2185XAC"),
-  (u"COLONIA TOSCANA SEGUNDA", u"COLONIA TOSCANA SEGUNDA - S2185XAB"),
-  (u"COLONIA TRES MARIAS", u"COLONIA TRES MARIAS - S2216XAB"),
-  (u"COLONIA TRES REYES", u"COLONIA TRES REYES - S3048XAA"),
-  (u"COLONIA URDÁNIZ", u"COLONIA URDÁNIZ - S3516"),
-  (u"COLONIA VALDEZ", u"COLONIA VALDEZ - S2115XAD"),
-  (u"COLONIA VALENCIA", u"COLONIA VALENCIA - S2639XAD"),
-  (u"COLONIA YAGUARETE", u"COLONIA YAGUARETE - S3560XAC"),
-  (u"CONSTANZA", u"CONSTANZA - S2311XAB"),
-  (u"CONSTITUYENTES", u"CONSTITUYENTES - S3014XAB"),
-  (u"COPACABANA", u"COPACABANA - S2919XAB"),
-  (u"CORA", u"CORA - S2631XAA"),
-  (u"CORONDA", u"CORONDA - S2240"),
-  (u"CORONEL AGUIRRE", u"CORONEL AGUIRRE - S2124XAB"),
-  (u"CORONEL ARNOLD", u"CORONEL ARNOLD - S2123"),
-  (u"CORONEL BOGADO", u"CORONEL BOGADO - S2103"),
-  (u"CORONEL DOMINGUEZ", u"CORONEL DOMINGUEZ - S2105"),
-  (u"CORONEL FRAGA", u"CORONEL FRAGA - S2301XAB"),
-  (u"CORONEL RODRÍGUEZ", u"CORONEL RODRÍGUEZ - S3013XAB"),
-  (u"CORONEL ROSETI", u"CORONEL ROSETI - S6106XAA"),
-  (u"CORREA", u"CORREA - S2506"),
-  (u"COSTA DEL TOBA", u"COSTA DEL TOBA - S3553"),
-  (u"CRESTA", u"CRESTA - S2126XAB"),
-  (u"CRISPI", u"CRISPI - S2441"),
-  (u"CRISTOLIA", u"CRISTOLIA - S2445XAA"),
-  (u"CUATRO CASAS", u"CUATRO CASAS - S2313XAC"),
-  (u"CUATRO ESQUINAS", u"CUATRO ESQUINAS - S2639XAE"),
-  (u"CULLEN", u"CULLEN - S2202XAB"),
-  (u"CULULÚ", u"CULULÚ - S3023XAE"),
-  (u"CURUPAYTI", u"CURUPAYTI - S2342"),
-  (u"DEST AERONAUTICO MILIT RECONQU", u"DEST AERONAUTICO MILIT RECONQU - S3567XAB"),
-  (u"DESVÍO ARIJÓN", u"DESVÍO ARIJÓN - S2242"),
-  (u"DESVÍO BOERO", u"DESVÍO BOERO - S2415XAA"),
-  (u"DESVÍO KILÓMETRO 282", u"DESVÍO KILÓMETRO 282 - S3551XAN"),
-  (u"DESVÍO KILÓMETRO 392", u"DESVÍO KILÓMETRO 392 - S3551XAA"),
-  (u"DHO", u"DHO - S3070XAC"),
-  (u"DÍAZ", u"DÍAZ - S2222"),
-  (u"DIEGO DE ALVEAR", u"DIEGO DE ALVEAR - S6036"),
-  (u"DISTRITO 3 ISLETAS", u"DISTRITO 3 ISLETAS - S3575XAA"),
-  (u"DOCE CASAS", u"DOCE CASAS - S2313XAD"),
-  (u"DÚRHAM", u"DÚRHAM - S2631XAB"),
-  (u"EGUSQUIZA", u"EGUSQUIZA - S2301"),
-  (u"EL 38", u"EL 38 - S3550XAG"),
-  (u"EL 44", u"EL 44 - S3550XAH"),
-  (u"EL AGUARÁ", u"EL AGUARÁ - S3070XAA"),
-  (u"EL ALBERDON", u"EL ALBERDON - S6106XAF"),
-  (u"EL AMARGO", u"EL AMARGO - S3060XAG"),
-  (u"EL ARAZÁ", u"EL ARAZÁ - S3563XAB"),
-  (u"EL BAGUAL", u"EL BAGUAL - S2723XAA"),
-  (u"EL BAYO", u"EL BAYO - S2300XAB"),
-  (u"EL BONETE", u"EL BONETE - S3550XAA"),
-  (u"EL CANTOR", u"EL CANTOR - S2643XAA"),
-  (u"EL CARAMELO", u"EL CARAMELO - S2105XAE"),
-  (u"EL CARMEN DE AVELLANEDA", u"EL CARMEN DE AVELLANEDA - S3561XAA"),
-  (u"EL CEIBALITO", u"EL CEIBALITO - S3575XAH"),
-  (u"EL CEIBO", u"EL CEIBO - S3005XAE"),
-  (u"EL CINCUENTA", u"EL CINCUENTA - S3550XAF"),
-  (u"EL DIECISIETE", u"EL DIECISIETE - S3553XAG"),
-  (u"EL GALPON", u"EL GALPON - S3021XAA"),
-  (u"EL GUSANO", u"EL GUSANO - S3005XAF"),
-  (u"EL JARDÍN", u"EL JARDÍN - S2732XAB"),
-  (u"EL LAUREL", u"EL LAUREL - S3001XAH"),
-  (u"EL MARIANO", u"EL MARIANO - S3060XAH"),
-  (u"EL NOCHERO", u"EL NOCHERO - S3061XAD"),
-  (u"EL PAJARO BLANCO", u"EL PAJARO BLANCO - S3051XAA"),
-  (u"EL PARA", u"EL PARA - S3005XAG"),
-  (u"EL POZO", u"EL POZO - S3001XAI"),
-  (u"EL RABÓN", u"EL RABÓN - S3592XAB"),
-  (u"EL REFUGIO", u"EL REFUGIO - S6103XAC"),
-  (u"EL RICARDITO", u"EL RICARDITO - S3572XAF"),
-  (u"EL SOMBRERERO", u"EL SOMBRERERO - S3046XAQ"),
-  (u"EL SOMBRERITO", u"EL SOMBRERITO - S3585XAE"),
-  (u"EL TAJAMAR", u"EL TAJAMAR - S3565XAH"),
-  (u"EL TAPIALITO", u"EL TAPIALITO - S3575XAI"),
-  (u"EL TIMBÓ", u"EL TIMBÓ - S3561XAC"),
-  (u"EL TRANSITO", u"EL TRANSITO - S2202XAC"),
-  (u"EL TRÉBOL", u"EL TRÉBOL - S2535"),
-  (u"EL TRIÁNGULO", u"EL TRIÁNGULO - S3060XAN"),
-  (u"EL TROPEZÓN", u"EL TROPEZÓN - S3009XAA"),
-  (u"ELISA", u"ELISA - S3029"),
-  (u"ELORTONDO", u"ELORTONDO - S2732"),
-  (u"EMILIA", u"EMILIA - S3036"),
-  (u"EMPALME SAN CARLOS", u"EMPALME SAN CARLOS - S3007XAB"),
-  (u"EMPALME VILLA CONSTITUCIÓN", u"EMPALME VILLA CONSTITUCIÓN - S2918"),
-  (u"ENCADENADAS", u"ENCADENADAS - S2607XAB"),
-  (u"ESMERALDA", u"ESMERALDA - S2456"),
-  (u"ESMERALDITA", u"ESMERALDITA - S2401XAA"),
-  (u"ESPERANZA", u"ESPERANZA - S3080"),
-  (u"ESPÍN", u"ESPÍN - S3056XAE"),
-  (u"ESQUINA GRANDE", u"ESQUINA GRANDE - S3040XAB"),
-  (u"ESTACION CHRISTOPHERSEN", u"ESTACION CHRISTOPHERSEN - S2611"),
-  (u"ESTACIÓN CLUCELLAS", u"ESTACIÓN CLUCELLAS - S2407"),
-  (u"ESTACIÓN ERASTO", u"ESTACIÓN ERASTO - S2119XAB"),
-  (u"ESTACION JOSÉFINA", u"ESTACION JOSÉFINA - S2403XAD"),
-  (u"ESTACIÓN MARÍA JUANA", u"ESTACIÓN MARÍA JUANA - S2445XAC"),
-  (u"ESTACIÓN MATILDE", u"ESTACIÓN MATILDE - S3013XAD"),
-  (u"ESTACION SAGUIER", u"ESTACION SAGUIER - S2315XAA"),
-  (u"ESTACIÓN TEODELINA", u"ESTACIÓN TEODELINA - S2600XAD"),
-  (u"ESTACION VILLA CONSTITUCION", u"ESTACION VILLA CONSTITUCION - S2919XAA"),
-  (u"ESTANCIA ACHALA", u"ESTANCIA ACHALA - S3060XAE"),
-  (u"ESTANCIA LA CIGUEÑA", u"ESTANCIA LA CIGUEÑA - S3060"),
-  (u"ESTANCIA LA CONSTANCIA", u"ESTANCIA LA CONSTANCIA - S3040XAE"),
-  (u"ESTANCIA LA MARÍA", u"ESTANCIA LA MARÍA - S2105XAF"),
-  (u"ESTANCIA LAS GAMAS", u"ESTANCIA LAS GAMAS - S3057XAC"),
-  (u"ESTANCIA LOS PALMARES", u"ESTANCIA LOS PALMARES - S3057XAD"),
-  (u"ESTANCIA PAVENHAN", u"ESTANCIA PAVENHAN - S3057XAE"),
-  (u"ESTANCIA PRUSIA", u"ESTANCIA PRUSIA - S3040XAF"),
-  (u"ESTANCIA SAN ANTONIO", u"ESTANCIA SAN ANTONIO - S2107XAA"),
-  (u"ESTANCIA SAN FRANCISCO", u"ESTANCIA SAN FRANCISCO - S2344XAD"),
-  (u"ESTEBAN RAMS", u"ESTEBAN RAMS - S3066"),
-  (u"ESTHER", u"ESTHER - S3036XAE"),
-  (u"ESTRADA", u"ESTRADA - S2409XAB"),
-  (u"EUSTOLIA", u"EUSTOLIA - S2407XAE"),
-  (u"EWALD", u"EWALD - S3561XAD"),
-  (u"FABRICA MILITAR SAN LORENZO", u"FABRICA MILITAR SAN LORENZO - S2156XAA"),
-  (u"FASSI", u"FASSI - S2300XAC"),
-  (u"FELICIA", u"FELICIA - S3087"),
-  (u"FIDELA", u"FIDELA - S2301"),
-  (u"FIGHIERA", u"FIGHIERA - S2126"),
-  (u"FIRMAT", u"FIRMAT - S2630"),
-  (u"FIVES LILLE", u"FIVES LILLE - S3054XAA"),
-  (u"FLOR DE ORO", u"FLOR DE ORO - S3575XAJ"),
-  (u"FLORENCIA", u"FLORENCIA - S3516"),
-  (u"FLORIDA", u"FLORIDA - S3565XAB"),
-  (u"FORTIN ALERTA", u"FORTIN ALERTA - S3066XAA"),
-  (u"FORTIN ALMAGRO", u"FORTIN ALMAGRO - S3046"),
-  (u"FORTIN ARGENTINA", u"FORTIN ARGENTINA - S3060XAA"),
-  (u"FORTÍN ATAHUALPA", u"FORTÍN ATAHUALPA - S3061XAA"),
-  (u"FORTÍN CACIQUE", u"FORTÍN CACIQUE - S3060XAB"),
-  (u"FORTÍN CHARRUA", u"FORTÍN CHARRUA - S3060XAP"),
-  (u"FORTÍN CHILCAS", u"FORTÍN CHILCAS - S3553XAH"),
-  (u"FORTÍN OLMOS", u"FORTÍN OLMOS - S3553"),
-  (u"FORTIN SEIS DE CABALLERIA", u"FORTIN SEIS DE CABALLERIA - S3061XAB"),
-  (u"FORTÍN TACURÚ", u"FORTÍN TACURÚ - S3060XAL"),
-  (u"FORTIN TOSTADO", u"FORTIN TOSTADO - S3060XAC"),
-  (u"FRANCISCO PAZ", u"FRANCISCO PAZ - S2111XAA"),
-  (u"FRANCK", u"FRANCK - S3009"),
-  (u"FRAY LUÍS BELTRÁN", u"FRAY LUÍS BELTRÁN - S2156"),
-  (u"FRONTERA", u"FRONTERA - S2438"),
-  (u"FUENTES", u"FUENTES - S2123"),
-  (u"FUNES", u"FUNES - S2132"),
-  (u"GABOTO", u"GABOTO - S2208"),
-  (u"GALISTEO", u"GALISTEO - S2307XAB"),
-  (u"GÁLVEZ", u"GÁLVEZ - S2252"),
-  (u"GARABATO", u"GARABATO - S3551XAS"),
-  (u"GARIBALDI", u"GARIBALDI - S2443XAB"),
-  (u"GATO COLORADO", u"GATO COLORADO - S3541"),
-  (u"GENERAL GELLY", u"GENERAL GELLY - S2701"),
-  (u"GENERAL LAGOS", u"GENERAL LAGOS - S2126"),
-  (u"GESSLER", u"GESSLER - S2253"),
-  (u"GOBERNADOR CRESPO", u"GOBERNADOR CRESPO - S3044"),
-  (u"GÖDEKEN", u"GÖDEKEN - S2639"),
-  (u"GODOY", u"GODOY - S2921"),
-  (u"GOLONDRINA", u"GOLONDRINA - S3551"),
-  (u"GRANADERO B BARGAS", u"GRANADERO B BARGAS - S2132XAD"),
-  (u"GRANADERO BAIGORRIA", u"GRANADERO BAIGORRIA - S2152"),
-  (u"GRANADERO BRASILIO BUSTOS", u"GRANADERO BRASILIO BUSTOS - S2257XAA"),
-  (u"GRANADEROS", u"GRANADEROS - S2156XAD"),
-  (u"GRANJA SAN MANUEL", u"GRANJA SAN MANUEL - S2501XAD"),
-  (u"GREGORIA PÉREZ DE DENIS", u"GREGORIA PÉREZ DE DENIS - S3061"),
-  (u"GRÜTLY", u"GRÜTLY - S3083"),
-  (u"GRÜTLY NORTE", u"GRÜTLY NORTE - S3083"),
-  (u"GUADALUPE NORTE", u"GUADALUPE NORTE - S3574XAB"),
-  (u"GUARANIES", u"GUARANIES - S3054XAC"),
-  (u"GUASUNCHO", u"GUASUNCHO - S3581XAA"),
-  (u"GUAYCURÚ", u"GUAYCURÚ - S3551XAO"),
-  (u"HELVECIA", u"HELVECIA - S3003"),
-  (u"HERSILIA", u"HERSILIA - S2352"),
-  (u"HIPATÍA", u"HIPATÍA - S3023"),
-  (u"HUANQUEROS", u"HUANQUEROS - S3076"),
-  (u"HUGENTOBLER", u"HUGENTOBLER - S2317XAE"),
-  (u"HUGENTOBLER", u"HUGENTOBLER - S2344XAB"),
-  (u"HUGHES", u"HUGHES - S2725"),
-  (u"HUMBERTO PRIMERO", u"HUMBERTO PRIMERO - S2309"),
-  (u"HUMBOLDT", u"HUMBOLDT - S3081"),
-  (u"HUMBOLDT CHICO", u"HUMBOLDT CHICO - S3081XAB"),
-  (u"IBARLUCEA", u"IBARLUCEA - S2142"),
-  (u"INDEPENDENCIA", u"INDEPENDENCIA - S3060XAD"),
-  (u"INGENIERO BOASI", u"INGENIERO BOASI - S3023XAD"),
-  (u"INGENIERO CHANOURDIE", u"INGENIERO CHANOURDIE - S3575XAB"),
-  (u"INGENIERO GARMENDIA", u"INGENIERO GARMENDIA - S3586XAA"),
-  (u"INGENIERO GERMANIA", u"INGENIERO GERMANIA - S3586XAB"),
-  (u"INTIYACO", u"INTIYACO - S3551"),
-  (u"IRIGOYEN", u"IRIGOYEN - S2248"),
-  (u"IRIONDO", u"IRIONDO - S3018XAA"),
-  (u"ISLA DEL PORTEÑO", u"ISLA DEL PORTEÑO - S3001"),
-  (u"ISLA TIGRE", u"ISLA TIGRE - S3583XAA"),
-  (u"ISLETA", u"ISLETA - S3581XAB"),
-  (u"ITURRASPE", u"ITURRASPE - S2521"),
-  (u"ITUZAINGÓ", u"ITUZAINGÓ - S2311XAE"),
-  (u"JACINTO L ARAUZ", u"JACINTO L ARAUZ - S3029"),
-  (u"JESÚS MARÍA", u"JESÚS MARÍA - S2204XAA"),
-  (u"JOSÉ MACIAS", u"JOSÉ MACIAS - S3041XAA"),
-  (u"JOSÉ MANUEL ESTRADA", u"JOSÉ MANUEL ESTRADA - S2403XAC"),
-  (u"JUAN B MOLINA", u"JUAN B MOLINA - S2103"),
-  (u"JUAN ORTÍZ", u"JUAN ORTÍZ - S2154XAA"),
-  (u"JUNCAL", u"JUNCAL - S2723"),
-  (u"KILOMETRO 113", u"KILOMETRO 113 - S2407XAD"),
-  (u"KILOMETRO 17", u"KILOMETRO 17 - S3565XAE"),
-  (u"KILÓMETRO 213", u"KILÓMETRO 213 - S3050XAA"),
-  (u"KILÓMETRO 23", u"KILÓMETRO 23 - S3589XAA"),
-  (u"KILOMETRO 235", u"KILOMETRO 235 - S3076XAC"),
-  (u"KILOMETRO 28", u"KILOMETRO 28 - S3014XAH"),
-  (u"KILOMETRO 293", u"KILOMETRO 293 - S3066XAD"),
-  (u"KILOMETRO 30", u"KILOMETRO 30 - S3565XAF"),
-  (u"KILOMETRO 302", u"KILOMETRO 302 - S3551"),
-  (u"KILOMETRO 319", u"KILOMETRO 319 - S2154XAB"),
-  (u"KILOMETRO 320", u"KILOMETRO 320 - S3551XAE"),
-  (u"KILOMETRO 323", u"KILOMETRO 323 - S2142XAB"),
-  (u"KILOMETRO 35", u"KILOMETRO 35 - S3014XAI"),
-  (u"KILOMETRO 389", u"KILOMETRO 389 - S3061XAE"),
-  (u"KILOMETRO 392", u"KILOMETRO 392 - S3551XAF"),
-  (u"KILOMETRO 396", u"KILOMETRO 396 - S6106XAB"),
-  (u"KILOMETRO 403", u"KILOMETRO 403 - S3585XAB"),
-  (u"KILOMETRO 408", u"KILOMETRO 408 - S3580XAB"),
-  (u"KILOMETRO 41", u"KILOMETRO 41 - S3581"),
-  (u"KILOMETRO 41", u"KILOMETRO 41 - S3020XAB"),
-  (u"KILOMETRO 421", u"KILOMETRO 421 - S3585XAC"),
-  (u"KILOMETRO 421", u"KILOMETRO 421 - S3061XAF"),
-  (u"KILOMETRO 443", u"KILOMETRO 443 - S2454XAA"),
-  (u"KILOMETRO 465", u"KILOMETRO 465 - S2456XAB"),
-  (u"KILOMETRO 468", u"KILOMETRO 468 - S3061XAG"),
-  (u"KILOMETRO 483", u"KILOMETRO 483 - S2456XAA"),
-  (u"KILOMETRO 49", u"KILOMETRO 49 - S2506XAA"),
-  (u"KILOMETRO 49", u"KILOMETRO 49 - S3023XAB"),
-  (u"KILOMETRO 49", u"KILOMETRO 49 - S3589XAE"),
-  (u"KILOMETRO 501", u"KILOMETRO 501 - S2438"),
-  (u"KILOMETRO 54", u"KILOMETRO 54 - S3589XAF"),
-  (u"KILOMETRO 67", u"KILOMETRO 67 - S3581XAC"),
-  (u"KILOMETRO 85", u"KILOMETRO 85 - S2303XAA"),
-  (u"KILÓMETRO 9", u"KILÓMETRO 9 - S3000XAE"),
-  (u"KILÓMETRO 95", u"KILÓMETRO 95 - S3046XAG"),
-  (u"LA ADELAIDA", u"LA ADELAIDA - S6103XAA"),
-  (u"LA ASTURIANA", u"LA ASTURIANA - S6106XAC"),
-  (u"LA BLANCA", u"LA BLANCA - S3551XAB"),
-  (u"LA BOMBILLA", u"LA BOMBILLA - S3060XAJ"),
-  (u"LA BRAVA", u"LA BRAVA - S3045XAC"),
-  (u"LA CABRAL", u"LA CABRAL - S3074"),
-  (u"LA CALIFORNIA", u"LA CALIFORNIA - S2520XAC"),
-  (u"LA CALMA", u"LA CALMA - S6106XAD"),
-  (u"LA CAMILA", u"LA CAMILA - S3054XAB"),
-  (u"LA CAPILLA", u"LA CAPILLA - S3040XAH"),
-  (u"LA CAROLINA", u"LA CAROLINA - S2105XAA"),
-  (u"LA CATALINA", u"LA CATALINA - S3572XAG"),
-  (u"LA CELIA", u"LA CELIA - S2115XAB"),
-  (u"LA CELIA", u"LA CELIA - S3569XAD"),
-  (u"LA CERAMICA Y CUYO", u"LA CERAMICA Y CUYO - S2000XAA"),
-  (u"LA CHISPA", u"LA CHISPA - S2601"),
-  (u"LA CIGUEÑA", u"LA CIGUEÑA - S3057"),
-  (u"LA CLARA", u"LA CLARA - S3025XAB"),
-  (u"LA CLARITA", u"LA CLARITA - S3585XAA"),
-  (u"LA CLORINDA", u"LA CLORINDA - S3021XAE"),
-  (u"LA CONSTANCIA", u"LA CONSTANCIA - S6103XAB"),
-  (u"LA CRIOLLA", u"LA CRIOLLA - S3052"),
-  (u"LA DIAMELA", u"LA DIAMELA - S3569XAE"),
-  (u"LA ELSA", u"LA ELSA - S2341XAB"),
-  (u"LA ESMERALDA", u"LA ESMERALDA - S3560XAA"),
-  (u"LA GALLARETA", u"LA GALLARETA - S3057"),
-  (u"LA GAMA", u"LA GAMA - S2615XAA"),
-  (u"LA GUAMPITA", u"LA GUAMPITA - S3056XAD"),
-  (u"LA GUARDIA", u"LA GUARDIA - S3001XAS"),
-  (u"LA HOSCA", u"LA HOSCA - S3050XAB"),
-  (u"LA INÉS", u"LA INÉS - S6100XAA"),
-  (u"LA INGLESITA", u"LA INGLESITA - S2601XAA"),
-  (u"LA JOSEFINA", u"LA JOSEFINA - S3565XAC"),
-  (u"LA JULIA", u"LA JULIA - S3046XAN"),
-  (u"LA LATA", u"LA LATA - S2126XAC"),
-  (u"LA LOLA", u"LA LOLA - S3567XAA"),
-  (u"LA LOMA", u"LA LOMA - S3555XAC"),
-  (u"LA LUCILA", u"LA LUCILA - S3072XAC"),
-  (u"LA MARINA", u"LA MARINA - S2341XAC"),
-  (u"LA MERCED", u"LA MERCED - S2173XAB"),
-  (u"LA MOROCHA", u"LA MOROCHA - S2613XAA"),
-  (u"LA NORIA", u"LA NORIA - S3001XAJ"),
-  (u"LA ORIENTAL", u"LA ORIENTAL - S3054XAG"),
-  (u"LA ORILLA", u"LA ORILLA - S3080XAC"),
-  (u"LA OTHILA", u"LA OTHILA - S2115XAA"),
-  (u"LA PELADA", u"LA PELADA - S3027"),
-  (u"LA PICASA", u"LA PICASA - S6036XAA"),
-  (u"LA POLVAREDA", u"LA POLVAREDA - S3074XAE"),
-  (u"LA POTASA", u"LA POTASA - S3563XAC"),
-  (u"LA RESERVA", u"LA RESERVA - S3581XAD"),
-  (u"LA ROSA", u"LA ROSA - S3042XAD"),
-  (u"LA RUBIA", u"LA RUBIA - S2342"),
-  (u"LA SALADA", u"LA SALADA - S2142"),
-  (u"LA SARITA", u"LA SARITA - S3563XAF"),
-  (u"LA SARNOSA", u"LA SARNOSA - S3057XAF"),
-  (u"LA SELVA", u"LA SELVA - S3551XAG"),
-  (u"LA SEMENTERA", u"LA SEMENTERA - S3038XAA"),
-  (u"LA VANGUARDIA", u"LA VANGUARDIA - S2105"),
-  (u"LA VANGUARDIA", u"LA VANGUARDIA - S3561XAE"),
-  (u"LA VERDE", u"LA VERDE - S3076XAA"),
-  (u"LA VIUDA", u"LA VIUDA - S2183XAA"),
-  (u"LA ZULEMA", u"LA ZULEMA - S3551XAH"),
-  (u"LABORDEBOY", u"LABORDEBOY - S2726"),
-  (u"LAGUNA PAIVA", u"LAGUNA PAIVA - S3020"),
-  (u"LAGUNA VERDE", u"LAGUNA VERDE - S3076XAB"),
-  (u"LANDETA", u"LANDETA - S2531"),
-  (u"LANTERI", u"LANTERI - S3575"),
-  (u"LARGUÍA", u"LARGUÍA - S2144XAC"),
-  (u"LARRECHEA", u"LARRECHEA - S2241"),
-  (u"LARRECHEA", u"LARRECHEA - S3080XAD"),
-  (u"LAS ANINTAS", u"LAS ANINTAS - S3560XAD"),
-  (u"LAS ARENAS", u"LAS ARENAS - S3060XAM"),
-  (u"LAS AVISPAS", u"LAS AVISPAS - S3074XAD"),
-  (u"LAS BANDURRIAS", u"LAS BANDURRIAS - S2148"),
-  (u"LAS CAÑAS", u"LAS CAÑAS - S3046"),
-  (u"LAS CATALINAS", u"LAS CATALINAS - S3560XAE"),
-  (u"LAS CHUÑAS", u"LAS CHUÑAS - S3061"),
-  (u"LAS DELICIAS", u"LAS DELICIAS - S3551XAI"),
-  (u"LAS DOS ANGELITAS", u"LAS DOS ANGELITAS - S6106XAG"),
-  (u"LAS ENCADENADAS", u"LAS ENCADENADAS - S2607XAC"),
-  (u"LAS GARSITAS", u"LAS GARSITAS - S3560XAH"),
-  (u"LAS GARZAS", u"LAS GARZAS - S3574"),
-  (u"LAS HIGUERITAS", u"LAS HIGUERITAS - S3013XAC"),
-  (u"LAS LIEBRES", u"LAS LIEBRES - S2520XAD"),
-  (u"LAS MERCEDES", u"LAS MERCEDES - S3516XAD"),
-  (u"LAS PALMAS", u"LAS PALMAS - S3555XAA"),
-  (u"LAS PALMERAS", u"LAS PALMERAS - S2326XAD"),
-  (u"LAS PAREJAS", u"LAS PAREJAS - S2505"),
-  (u"LAS PETACAS", u"LAS PETACAS - S2451"),
-  (u"LAS QUINTAS", u"LAS QUINTAS - S2200XAB"),
-  (u"LAS ROSAS", u"LAS ROSAS - S2520"),
-  (u"LAS SIETE PROVINCIAS", u"LAS SIETE PROVINCIAS - S3575XAC"),
-  (u"LAS TOSCAS", u"LAS TOSCAS - S3586"),
-  (u"LAS TRES MARÍAS", u"LAS TRES MARÍAS - S3046XAB"),
-  (u"LAS TROJAS", u"LAS TROJAS - S2500XAB"),
-  (u"LAS TUNAS", u"LAS TUNAS - S3009"),
-  (u"LASSAGA", u"LASSAGA - S3036XAC"),
-  (u"LAZZARINO", u"LAZZARINO - S6103XAD"),
-  (u"LEHMANN", u"LEHMANN - S2305"),
-  (u"LICEO AERONAUTICO MILITAR", u"LICEO AERONAUTICO MILITAR - S2132XAA"),
-  (u"LINKS", u"LINKS - S2132XAB"),
-  (u"LLAMBÍ CAMPBELL", u"LLAMBÍ CAMPBELL - S3036"),
-  (u"LOGROÑO", u"LOGROÑO - S3066"),
-  (u"LOMA ALTA", u"LOMA ALTA - S2253"),
-  (u"LOMA VERDE", u"LOMA VERDE - S2117XAA"),
-  (u"LÓPEZ", u"LÓPEZ - S2255"),
-  (u"LOS AMORES", u"LOS AMORES - S3551XAT"),
-  (u"LOS ARCOS", u"LOS ARCOS - S2720XAB"),
-  (u"LOS CARDENALES", u"LOS CARDENALES - S3005XAD"),
-  (u"LOS CARDOS", u"LOS CARDOS - S2533"),
-  (u"LOS CERRILLOS", u"LOS CERRILLOS - S3001XAK"),
-  (u"LOS CHARABONES", u"LOS CHARABONES - S3060XAK"),
-  (u"LOS CLAROS", u"LOS CLAROS - S3551XAC"),
-  (u"LOS CORRALITOS", u"LOS CORRALITOS - S3051XAB"),
-  (u"LOS CUERVOS", u"LOS CUERVOS - S3555XAD"),
-  (u"LOS GALPONES", u"LOS GALPONES - S3050XAC"),
-  (u"LOS HORNOS", u"LOS HORNOS - S3021XAB"),
-  (u"LOS LAPACHOS", u"LOS LAPACHOS - S3575XAD"),
-  (u"LOS LAURELES", u"LOS LAURELES - S3567"),
-  (u"LOS LEONES", u"LOS LEONES - S3551XAD"),
-  (u"LOS LEONES", u"LOS LEONES - S2146XAA"),
-  (u"LOS MOLINOS", u"LOS MOLINOS - S2181"),
-  (u"LOS MOLLES", u"LOS MOLLES - S3070XAB"),
-  (u"LOS MUCHACHOS", u"LOS MUCHACHOS - S2105XAB"),
-  (u"LOS NOGALES", u"LOS NOGALES - S2183"),
-  (u"LOS OLIVOS", u"LOS OLIVOS - S3046XAO"),
-  (u"LOS OSOS", u"LOS OSOS - S3051XAC"),
-  (u"LOS PALMARES", u"LOS PALMARES - S3057XAG"),
-  (u"LOS QUIRQUINCHOS", u"LOS QUIRQUINCHOS - S2637"),
-  (u"LOS SALADILLOS", u"LOS SALADILLOS - S3041XAC"),
-  (u"LOS SEMBRADOS", u"LOS SEMBRADOS - S2447XAA"),
-  (u"LOS TABANOS DESVIO KM 366", u"LOS TABANOS DESVIO KM 366 - S3551XAU"),
-  (u"LUCIANO LEIVA", u"LUCIANO LEIVA - S3048XAE"),
-  (u"LUCIO V LÓPEZ", u"LUCIO V LÓPEZ - S2142"),
-  (u"LUIS PALACIOS", u"LUIS PALACIOS - S2142XAC"),
-  (u"MACIEL", u"MACIEL - S2208"),
-  (u"MAGGIOLO", u"MAGGIOLO - S2622"),
-  (u"MAIZALES", u"MAIZALES - S2119XAC"),
-  (u"MALABRIGO", u"MALABRIGO - S3572"),
-  (u"MANGORÉ", u"MANGORÉ - S2445XAB"),
-  (u"MANUCHO", u"MANUCHO - S3023XAA"),
-  (u"MARCELINO ESCALADA", u"MARCELINO ESCALADA - S3042"),
-  (u"MARGARITA", u"MARGARITA - S3056"),
-  (u"MARÍA EUGENIA", u"MARÍA EUGENIA - S3072XAA"),
-  (u"MARÍA JUANA", u"MARÍA JUANA - S2445"),
-  (u"MARIA LUISA", u"MARIA LUISA - S3025"),
-  (u"MARIA LUISA CORREA", u"MARIA LUISA CORREA - S2501"),
-  (u"MARÍA SUSANA", u"MARÍA SUSANA - S2527"),
-  (u"MARÍA TERESA", u"MARÍA TERESA - S2609"),
-  (u"MARIANO SAAVEDRA", u"MARIANO SAAVEDRA - S3011"),
-  (u"MARINI", u"MARINI - S2301"),
-  (u"MASCIAS", u"MASCIAS - S3041XAE"),
-  (u"MÁXIMO PAZ", u"MÁXIMO PAZ - S2115"),
-  (u"MELINCUÉ", u"MELINCUÉ - S2728"),
-  (u"MERCEDITAS", u"MERCEDITAS - S2725XAA"),
-  (u"MIGUEL ESCALADA", u"MIGUEL ESCALADA - S3046XAP"),
-  (u"MIGUEL TORRES", u"MIGUEL TORRES - S2631"),
-  (u"MIRAMAR", u"MIRAMAR - S6106XAI"),
-  (u"MOCOVÍ", u"MOCOVÍ - S3581XAE"),
-  (u"MOISÉS VILLE", u"MOISÉS VILLE - S2313"),
-  (u"MONIGOTES", u"MONIGOTES - S2342"),
-  (u"MONJE", u"MONJE - S2212"),
-  (u"MONTE FLORES", u"MONTE FLORES - S2101XAA"),
-  (u"MONTE OBSCURIDAD", u"MONTE OBSCURIDAD - S2349XAB"),
-  (u"MONTE VERA", u"MONTE VERA - S3014"),
-  (u"MONTES DE OCA", u"MONTES DE OCA - S2521"),
-  (u"MOUSSY", u"MOUSSY - S3561XAB"),
-  (u"MURPHY", u"MURPHY - S2601"),
-  (u"MUTCHNIK", u"MUTCHNIK - S2313XAE"),
-  (u"NARÉ", u"NARÉ - S3046XAH"),
-  (u"NELSON", u"NELSON - S3032"),
-  (u"NICANOR E MOLINAS", u"NICANOR E MOLINAS - S3563XAD"),
-  (u"NUEVA ITALIA", u"NUEVA ITALIA - S3074XAA"),
-  (u"NUEVA POMPEYA", u"NUEVA POMPEYA - S3014XAC"),
-  (u"NUEVA UKRANIA", u"NUEVA UKRANIA - S3046XAI"),
-  (u"NUEVO TORINO", u"NUEVO TORINO - S3087"),
-  (u"ÑANDU", u"ÑANDU - S3553"),
-  (u"ÑANDUBAY", u"ÑANDUBAY - S3041"),
-  (u"ÑANDUCITA", u"ÑANDUCITA - S3072"),
-  (u"OBRAJE INDIO MUERTO", u"OBRAJE INDIO MUERTO - S3589XAB"),
-  (u"OBRAJE SAN JUAN", u"OBRAJE SAN JUAN - S3589XAC"),
-  (u"OGILVIE", u"OGILVIE - S3551"),
-  (u"OLIVEROS", u"OLIVEROS - S2206"),
-  (u"OMBU NORTE", u"OMBU NORTE - S3005XAH"),
-  (u"ORATORIO MORANTE", u"ORATORIO MORANTE - S2921XAB"),
-  (u"OROÑO", u"OROÑO - S2253"),
-  (u"OTTO BEMBERG", u"OTTO BEMBERG - S2605XAA"),
-  (u"PADRE PEDRO ITURRALDE", u"PADRE PEDRO ITURRALDE - S3061XAJ"),
-  (u"PAGANINI", u"PAGANINI - S2152XAA"),
-  (u"PAIKÍN", u"PAIKÍN - S3046XAJ"),
-  (u"PALACIOS", u"PALACIOS - S2326XAB"),
-  (u"PARAJE 29", u"PARAJE 29 - S3553"),
-  (u"PARAJE KILOMETRO 12", u"PARAJE KILOMETRO 12 - S3550XAB"),
-  (u"PARAJE TRAGNAGHI", u"PARAJE TRAGNAGHI - S3551XAP"),
-  (u"PASO VINAL", u"PASO VINAL - S3080XAA"),
-  (u"PAUL GROUSSAC", u"PAUL GROUSSAC - S3585XAD"),
-  (u"PAVENHAN", u"PAVENHAN - S3057XAB"),
-  (u"PAVÓN", u"PAVÓN - S2918"),
-  (u"PAVÓN ARRIBA", u"PAVÓN ARRIBA - S2109"),
-  (u"PEDRO GÓMEZ CELLO", u"PEDRO GÓMEZ CELLO - S3054XAD"),
-  (u"PEREYRA LUCENA", u"PEREYRA LUCENA - S2105XAC"),
-  (u"PÉREZ", u"PÉREZ - S2121"),
-  (u"PERICOTA", u"PERICOTA - S3025"),
-  (u"PETRONILA", u"PETRONILA - S3046XAD"),
-  (u"PEYRANO", u"PEYRANO - S2113"),
-  (u"PIAMONTE", u"PIAMONTE - S2529"),
-  (u"PILAR", u"PILAR - S3085"),
-  (u"PINO DE SAN LORENZO", u"PINO DE SAN LORENZO - S2200XAC"),
-  (u"PIÑERO", u"PIÑERO - S2119"),
-  (u"PIQUETE", u"PIQUETE - S3000XAA"),
-  (u"POMPEYA", u"POMPEYA - S3014XAD"),
-  (u"PORTALIS", u"PORTALIS - S3066XAE"),
-  (u"PORTUGALETE", u"PORTUGALETE - S3071XAB"),
-  (u"POTRERO GUASUNCHO", u"POTRERO GUASUNCHO - S3589XAD"),
-  (u"POZO BORRADO", u"POZO BORRADO - S3061"),
-  (u"POZO DE LOS INDIOS", u"POZO DE LOS INDIOS - S3551XAQ"),
-  (u"PRESIDENTE ROCA", u"PRESIDENTE ROCA - S2301XAD"),
-  (u"PROGRESO", u"PROGRESO - S3023"),
-  (u"PROVIDENCIA", u"PROVIDENCIA - S3025"),
-  (u"PUEBLO ABC", u"PUEBLO ABC - S3080XAE"),
-  (u"PUEBLO AREQUITO", u"PUEBLO AREQUITO - S2183"),
-  (u"PUEBLO CANDIOTI", u"PUEBLO CANDIOTI - S3000XAF"),
-  (u"PUEBLO ESTHER", u"PUEBLO ESTHER - S2126"),
-  (u"PUEBLO GOLONDRINA", u"PUEBLO GOLONDRINA - S3551XAJ"),
-  (u"PUEBLO KIRSTON", u"PUEBLO KIRSTON - S2202XAD"),
-  (u"PUEBLO MARIA JUANA", u"PUEBLO MARIA JUANA - S2445"),
-  (u"PUEBLO MUÑOZ", u"PUEBLO MUÑOZ - S2119"),
-  (u"PUEBLO NUEVO", u"PUEBLO NUEVO - S2124XAA"),
-  (u"PUEBLO SAN ANTONIO", u"PUEBLO SAN ANTONIO - S2301"),
-  (u"PUEBLO TERRAGNI", u"PUEBLO TERRAGNI - S2300XAA"),
-  (u"PUENTE COLASTINE", u"PUENTE COLASTINE - S2242XAB"),
-  (u"PUERTO ARAGÓN", u"PUERTO ARAGÓN - S2246XAA"),
-  (u"PUERTO DE SAN LORENZO", u"PUERTO DE SAN LORENZO - S2200XAA"),
-  (u"PUERTO GABOTO", u"PUERTO GABOTO - S2208XAA"),
-  (u"PUERTO GRAL SAN MARTIN", u"PUERTO GRAL SAN MARTIN - S2202"),
-  (u"PUERTO OCAMPO", u"PUERTO OCAMPO - S3580XAC"),
-  (u"PUERTO PIRACUÁ", u"PUERTO PIRACUÁ - S3516XAE"),
-  (u"PUERTO PIRACUACITO", u"PUERTO PIRACUACITO - S3592XAC"),
-  (u"PUERTO RECONQUISTA", u"PUERTO RECONQUISTA - S3567XAC"),
-  (u"PUJATO", u"PUJATO - S2123"),
-  (u"PUJATO NORTE", u"PUJATO NORTE - S3080XAF"),
-  (u"RABIOLA", u"RABIOLA - S2600XAE"),
-  (u"RAFAELA", u"RAFAELA - S2300"),
-  (u"RAMAYÓN", u"RAMAYÓN - S3042"),
-  (u"RAMONA", u"RAMONA - S2301"),
-  (u"RAQUEL", u"RAQUEL - S2322XAB"),
-  (u"RASTREADOR FOURNIER", u"RASTREADOR FOURNIER - S2605XAB"),
-  (u"RECONQUISTA", u"RECONQUISTA - S3560"),
-  (u"RECREO", u"RECREO - S3018"),
-  (u"RECREO SUR", u"RECREO SUR - S3001XAL"),
-  (u"REINA MARGARITA", u"REINA MARGARITA - S2309XAB"),
-  (u"REYNALDO CULLEN", u"REYNALDO CULLEN - S3020XAC"),
-  (u"RICARDONE", u"RICARDONE - S2201"),
-  (u"RIGBY", u"RIGBY - S2255XAB"),
-  (u"RINCON DE GRONDONA", u"RINCON DE GRONDONA - S2206XAB"),
-  (u"RINCON DE SAN ANTONIO", u"RINCON DE SAN ANTONIO - S3046XAE"),
-  (u"RINCON DE TACURALES", u"RINCON DE TACURALES - S2317XAA"),
-  (u"RINCÓN DEL PINTADO", u"RINCÓN DEL PINTADO - S3080XAG"),
-  (u"RINCON DEL QUEBRACHO", u"RINCON DEL QUEBRACHO - S3025XAC"),
-  (u"RINCON NORTE", u"RINCON NORTE - S3001XAT"),
-  (u"RINCON POTREROS", u"RINCON POTREROS - S3001XAU"),
-  (u"RINLON DE AVILA", u"RINLON DE AVILA - S3023XAC"),
-  (u"RÍO SALADO", u"RÍO SALADO - S3036XAD"),
-  (u"RIVADAVIA", u"RIVADAVIA - S3081XAC"),
-  (u"RODOLFO ALCORTA", u"RODOLFO ALCORTA - S2115XAC"),
-  (u"ROLDÁN", u"ROLDÁN - S2134"),
-  (u"ROMANG", u"ROMANG - S3555"),
-  (u"ROSARIO", u"ROSARIO - S2000"),
-  (u"RUEDA", u"RUEDA - S2921"),
-  (u"RUFINO", u"RUFINO - S6100"),
-  (u"RUINAS SANTA FE LA VIEJA", u"RUINAS SANTA FE LA VIEJA - S3001XAF"),
-  (u"RUNCIMAN", u"RUNCIMAN - S2611XAA"),
-  (u"SA PEREYRA", u"SA PEREYRA - S3011"),
-  (u"SAGUIER", u"SAGUIER - S2301"),
-  (u"SALADERO M CABAL", u"SALADERO M CABAL - S3001XAX"),
-  (u"SALTO GRANDE", u"SALTO GRANDE - S2142"),
-  (u"SAN AGUSTÍN", u"SAN AGUSTÍN - S3017"),
-  (u"SAN ALBERTO", u"SAN ALBERTO - S3565XAD"),
-  (u"SAN ANTONIO DE OBLIGADO", u"SAN ANTONIO DE OBLIGADO - S3587XAA"),
-  (u"SAN BERNARDO", u" S3061XAL' - S3048"),
-  (u"SAN CARLOS", u"SAN CARLOS - S6106XAH"),
-  (u"SAN CARLOS CENTRO", u"SAN CARLOS CENTRO - S3013"),
-  (u"SAN CARLOS NORTE", u"SAN CARLOS NORTE - S3009"),
-  (u"SAN CARLOS SUD", u"SAN CARLOS SUD - S3013"),
-  (u"SAN CRISTÓBAL", u"SAN CRISTÓBAL - S3070"),
-  (u"SAN EDUARDO", u"SAN EDUARDO - S2615"),
-  (u"SAN ESTANISLAO", u"SAN ESTANISLAO - S2501XAA"),
-  (u"SAN EUGENIO", u"SAN EUGENIO - S2253"),
-  (u"SAN FABIÁN", u"SAN FABIÁN - S2242"),
-  (u"SAN FRANCISCO DE SANTA FE", u"SAN FRANCISCO DE SANTA FE - S2601"),
-  (u"SAN GENARO", u"SAN GENARO - S2146"),
-  (u"SAN GENARO NORTE", u"SAN GENARO NORTE - S2147"),
-  (u"SAN GERÓNIMO", u"SAN GERÓNIMO - S2136XAA"),
-  (u"SAN GREGORIO", u"SAN GREGORIO - S2613"),
-  (u"SAN GUILLERMO", u"SAN GUILLERMO - S2512XAA"),
-  (u"SAN GUILLERMO", u"SAN GUILLERMO - S3020XAD"),
-  (u"SAN GUILLERMO", u"SAN GUILLERMO - S2347"),
-  (u"SAN JAVIER", u"SAN JAVIER - S3005"),
-  (u"SAN JERÓNIMO DEL SAUCE", u"SAN JERÓNIMO DEL SAUCE - S3009"),
-  (u"SAN JERÓNIMO NORTE", u"SAN JERÓNIMO NORTE - S3011"),
-  (u"SAN JERÓNIMO SUR", u"SAN JERÓNIMO SUR - S2136"),
-  (u"SAN JOAQUÍN", u"SAN JOAQUÍN - S3001XAG"),
-  (u"SAN JORGE", u"SAN JORGE - S2451"),
-  (u"SAN JOSÉ", u"SAN JOSÉ - S3016"),
-  (u"SAN JOSÉ DE LA ESQUINA", u"SAN JOSÉ DE LA ESQUINA - S2185"),
-  (u"SAN JOSÉ DEL RINCÓN", u"SAN JOSÉ DEL RINCÓN - S3001"),
-  (u"SAN JOSÉ FRONTERA", u"SAN JOSÉ FRONTERA - S2401XAB"),
-  (u"SAN JUSTO", u"SAN JUSTO - S3040"),
-  (u"SAN LORENZO", u"SAN LORENZO - S2200"),
-  (u"SAN MARCELO", u"SAN MARCELO - S6009XAA"),
-  (u"SAN MARCOS DE VENADO TUERTO", u"SAN MARCOS DE VENADO TUERTO - S2600XAA"),
-  (u"SAN MARIANO", u"SAN MARIANO - S3011XAA"),
-  (u"SAN MARTÍN DE LAS ESCOBAS", u"SAN MARTÍN DE LAS ESCOBAS - S2449"),
-  (u"SAN MARTÍN DE TOURS", u"SAN MARTÍN DE TOURS - S2255XAC"),
-  (u"SAN MARTÍN NORTE", u"SAN MARTÍN NORTE - S3045XAD"),
-  (u"SAN MIGUEL", u"SAN MIGUEL - S2309XAC"),
-  (u"SAN PEDRO", u"SAN PEDRO - S3021XAC"),
-  (u"SAN PEDRO NORTE", u"SAN PEDRO NORTE - S3021XAD"),
-  (u"SAN PEDRO SUR", u"SAN PEDRO SUR - S3014XAE"),
-  (u"SAN RICARDO", u"SAN RICARDO - S2501XAB"),
-  (u"SAN ROQUE", u"SAN ROQUE - S3553XAA"),
-  (u"SAN SEBASTIÁN", u"SAN SEBASTIÁN - S2121XAC"),
-  (u"SAN URBANO", u"SAN URBANO - S2728XAA"),
-  (u"SAN VICENTE", u"SAN VICENTE - S2447"),
-  (u"SAN VICENTE", u"SAN VICENTE - S3580XAA"),
-  (u"SANCTI SPÍRITU", u"SANCTI SPÍRITU - S2617"),
-  (u"SANFORD", u"SANFORD - S2173"),
-  (u"SANTA ANA", u"SANTA ANA - S3575XAE"),
-  (u"SANTA CLARA", u"SANTA CLARA - S2258XAA"),
-  (u"SANTA CLARA DE BUENA VISTA", u"SANTA CLARA DE BUENA VISTA - S2258"),
-  (u"SANTA CLARA DE SAGUIER", u"SANTA CLARA DE SAGUIER - S2405"),
-  (u"SANTA EMILIA", u"SANTA EMILIA - S2725XAB"),
-  (u"SANTA EUSEBIA", u"SANTA EUSEBIA - S2317"),
-  (u"SANTA FE", u"SANTA FE - S3000"),
-  (u"SANTA FELICIA", u"SANTA FELICIA - S3551"),
-  (u"SANTA ISABEL", u"SANTA ISABEL - S2605"),
-  (u"SANTA LUCÍA", u"SANTA LUCÍA - S3553XAF"),
-  (u"SANTA MARGARITA", u"SANTA MARGARITA - S3061"),
-  (u"SANTA MARÍA", u"SANTA MARÍA - S3011XAB"),
-  (u"SANTA NATALIA", u"SANTA NATALIA - S2639XAJ"),
-  (u"SANTA PAULA", u"SANTA PAULA - S6106XAJ"),
-  (u"SANTA ROSA DE CALCHINES", u"SANTA ROSA DE CALCHINES - S3001"),
-  (u"SANTA TERESA", u"SANTA TERESA - S2111"),
-  (u"SANTA TERESA", u"SANTA TERESA - S6106XAK"),
-  (u"SANTO DOMINGO", u"SANTO DOMINGO - S3025XAA"),
-  (u"SANTO TOME", u"SANTO TOME - S3016"),
-  (u"SANTURCE", u"SANTURCE - S3074XAF"),
-  (u"SARGENTO CABRAL", u"SARGENTO CABRAL - S2105"),
-  (u"SARMIENTO", u"SARMIENTO - S3023"),
-  (u"SASTRE", u"SASTRE - S2440"),
-  (u"SAUCE VIEJO", u"SAUCE VIEJO - S3017"),
-  (u"SCHIFFNER", u"SCHIFFNER - S2451XAC"),
-  (u"SEMINO", u"SEMINO - S2138XAB"),
-  (u"SERODINO", u"SERODINO - S2216"),
-  (u"SETUBAL", u"SETUBAL - S3014XAF"),
-  (u"SIERRA PEREYRA", u"SIERRA PEREYRA - S2300XAE"),
-  (u"SIN PEREZA", u"SIN PEREZA - S3060XAO"),
-  (u"SOL DE MAYO", u"SOL DE MAYO - S3048"),
-  (u"SOLDINI", u"SOLDINI - S2107"),
-  (u"SOLEDAD", u"SOLEDAD - S3025XAE"),
-  (u"SOUTO MAYOR", u"SOUTO MAYOR - S3025XAF"),
-  (u"STEPHENSON", u"STEPHENSON - S2103XAA"),
-  (u"SUARDI", u"SUARDI - S2349"),
-  (u"SUNCHALES", u"SUNCHALES - S2322"),
-  (u"SUSANA", u"SUSANA - S2301"),
-  (u"TACUARENDÍ", u"TACUARENDÍ - S3587"),
-  (u"TACURAL", u"TACURAL - S2324"),
-  (u"TAIS", u"TAIS - S2535XAA"),
-  (u"TALLERES", u"TALLERES - S2121XAD"),
-  (u"TARRAGONA", u"TARRAGONA - S6103XAE"),
-  (u"TARTAGAL", u"TARTAGAL - S3565XAG"),
-  (u"TEODELINA", u"TEODELINA - S6009"),
-  (u"THEOBALD", u"THEOBALD - S2918"),
-  (u"TIMBUES JOSÉ MARIA", u"TIMBUES JOSÉ MARIA - S2204"),
-  (u"TOBA", u"TOBA - S3551XAR"),
-  (u"TOMÁS ALVA EDISON", u"TOMÁS ALVA EDISON - S3023XAF"),
-  (u"TORTUGAS", u"TORTUGAS - S2512"),
-  (u"TOSTADO", u"TOSTADO - S3060"),
-  (u"TOTORAS", u"TOTORAS - S2144"),
-  (u"TRAILL", u"TRAILL - S2456XAC"),
-  (u"TRES BOCAS", u"TRES BOCAS - S3560XAG"),
-  (u"TRES COLONIAS", u"TRES COLONIAS - S2300XAF"),
-  (u"TRES ESQUINAS", u"TRES ESQUINAS - S2921XAA"),
-  (u"TRES POZOS", u"TRES POZOS - S3061XAK"),
-  (u"TTE HIPOLITO BOUCHARD", u"TTE HIPOLITO BOUCHARD - S2156XAE"),
-  (u"URANGA", u"URANGA - S2105"),
-  (u"VEINTICUATRO CASAS", u"VEINTICUATRO CASAS - S2313XAF"),
-  (u"VELAZQUEZ", u"VELAZQUEZ - S3550XAC"),
-  (u"VENADO TUERTO", u"VENADO TUERTO - S2600"),
-  (u"VERA", u"VERA - S3550"),
-  (u"VERA MUJICA", u"VERA MUJICA - S3040XAD"),
-  (u"VERA Y PINTADO", u"VERA Y PINTADO - S3054XAE"),
-  (u"VICENTE ECHEVARRIA", u"VICENTE ECHEVARRIA - S2142XAD"),
-  (u"VICTOR MANUEL SEGUNDO", u"VICTOR MANUEL SEGUNDO - S3563XAE"),
-  (u"VIDELA", u"VIDELA - S3048"),
-  (u"VILA", u"VILA - S2301"),
-  (u"VILLA ADELA", u"VILLA ADELA - S3581"),
-  (u"VILLA AMELIA", u"VILLA AMELIA - S2101"),
-  (u"VILLA AMÉRICA", u"VILLA AMÉRICA - S2121XAA"),
-  (u"VILLA ANA", u"VILLA ANA - S3583"),
-  (u"VILLA BIOTA", u"VILLA BIOTA - S2147XAA"),
-  (u"VILLA CAÑAS", u"VILLA CAÑAS - S2607"),
-  (u"VILLA CASSINI", u"VILLA CASSINI - S2154XAC"),
-  (u"VILLA CONSTITUCIÓN", u"VILLA CONSTITUCIÓN - S2919"),
-  (u"VILLA DIVISA DE MAYO", u"VILLA DIVISA DE MAYO - S2631XAC"),
-  (u"VILLA DON BOSCO", u"VILLA DON BOSCO - S3000XAB"),
-  (u"VILLA ELOÍSA", u"VILLA ELOÍSA - S2503"),
-  (u"VILLA ESTELA", u"VILLA ESTELA - S2726XAA"),
-  (u"VILLA FREDICKSON", u"VILLA FREDICKSON - S2630XAB"),
-  (u"VILLA GARIBALDI", u"VILLA GARIBALDI - S2156XAF"),
-  (u"VILLA GOBERNADOR GÁLVEZ", u"VILLA GOBERNADOR GÁLVEZ - S2124"),
-  (u"VILLA GUASTALLA", u"VILLA GUASTALLA - S2148XAA"),
-  (u"VILLA GUILLERMINA", u"VILLA GUILLERMINA - S3589"),
-  (u"VILLA LA RIBERA", u"VILLA LA RIBERA - S2500XAC"),
-  (u"VILLA LASTENIA", u"VILLA LASTENIA - S3042XAE"),
-  (u"VILLA LUJÁN", u"VILLA LUJÁN - S3016XAA"),
-  (u"VILLA LYLY TALLERES", u"VILLA LYLY TALLERES - S2121XAB"),
-  (u"VILLA MARGARITA", u"VILLA MARGARITA - S2156XAG"),
-  (u"VILLA MARIA SELVA", u"VILLA MARIA SELVA - S3000XAC"),
-  (u"VILLA MINETTI", u"VILLA MINETTI - S3061"),
-  (u"VILLA MUGUETA", u"VILLA MUGUETA - S2175"),
-  (u"VILLA OCAMPO", u"VILLA OCAMPO - S3580"),
-  (u"VILLA PORUCCI", u"VILLA PORUCCI - S2123XAC"),
-  (u"VILLA REGULES", u"VILLA REGULES - S2630XAA"),
-  (u"VILLA ROSELLO", u"VILLA ROSELLO - S6100XAB"),
-  (u"VILLA SAN DIEGO", u"VILLA SAN DIEGO - S2124XAC"),
-  (u"VILLA SAN JOSÉ", u"VILLA SAN JOSÉ - S2301"),
-  (u"VILLA SARALEGUI", u"VILLA SARALEGUI - S3046XAF"),
-  (u"VILLA TRINIDAD", u"VILLA TRINIDAD - S2345"),
-  (u"VILLA VIVEROS", u"VILLA VIVEROS - S3001XAV"),
-  (u"VILLA YAPEYU", u"VILLA YAPEYU - S3000XAH"),
-  (u"VILLADA", u"VILLADA - S2173"),
-  (u"VILLANI", u"VILLANI - S2400XAA"),
-  (u"VIRGINIA", u"VIRGINIA - S2311XAD"),
-  (u"VUELTA DEL PIRATA", u"VUELTA DEL PIRATA - S3001"),
-  (u"WALVELBERG", u"WALVELBERG - S2313XAA"),
-  (u"WHEELWRIGHT", u"WHEELWRIGHT - S2722"),
-  (u"WILDERMUTH", u"WILDERMUTH - S2257XAB"),
-  (u"YAGUARETÉ", u"YAGUARETÉ - S3586XAD"),
-  (u"YAMANDU", u"YAMANDU - S3014XAJ"),
-  (u"ZADOCKHAN", u"ZADOCKHAN - S2326XAC"),
-  (u"ZAMPONI", u"ZAMPONI - S2105XAD"),
-  (u"ZANETTI", u"ZANETTI - S2301XAF"),
-  (u"ZAVALLA", u"ZAVALLA - S2123"),
-  (u"ZENÓN PEREYRA", u"ZENÓN PEREYRA - S2409"),
-)
 
-CP_dict = dict(CP)
+class CaratulaForm(forms.Form):
+    expte_nro = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
+    inmueble = forms.CharField(widget=forms.Textarea(attrs={
+        'placeholder': 'ej: Una fracción de terreno...'
+        }), required=False)
+    tomo = forms.IntegerField(required=False)
+    par = forms.BooleanField(required=False)
+    folio = forms.IntegerField(required=False)
+    numero = forms.IntegerField(required=False)
+    fecha = forms.DateField(required=False)
+    obs = forms.CharField(widget=forms.Textarea(attrs={
+        'placeholder': 'ej: Modifica el Lote Nº 1 del Plano Nº 23.456. Etc.'
+        }), required=False)
 
-PROV = (
-  (u'BUENOS AIRES', u'BUENOS AIRES'),
-  (u'CAPITAL FEDERAL', u'CAPITAL FEDERAL'),
-  (u'CATAMARCA', u'CATAMARCA'),
-  (u'CHACO', u'CHACO'),
-  (u'CHUBUT', u'CHUBUT'),
-  (u'CÓRDOBA', u'CÓRDOBA'),
-  (u'CORRIENTES', u'CORRIENTES'),
-  (u'ENTRE RÍOS', u'ENTRE RÍOS'),
-  (u'FORMOSA', u'FORMOSA'),
-  (u'JUJUY', u'JUJUY'),
-  (u'LA PAMPA', u'LA PAMPA'),
-  (u'LA RIOJA', u'LA RIOJA'),
-  (u'MENDOZA', u'MENDOZA'),
-  (u'MISIONES', u'MISIONES'),
-  (u'NEUQUÉN', u'NEUQUÉN'),
-  (u'RÍO NEGRO', u'RÍO NEGRO'),
-  (u'SALTA', u'SALTA'),
-  (u'SAN JUAN', u'SAN JUAN'),
-  (u'SAN LUIS', u'SAN LUIS'),
-  (u'SANTA CRUZ', u'SANTA CRUZ'),
-  (u'SANTA FE', u'SANTA FE'),
-  (u'SANTIAGO', u'SANTIAGO'),
-  (u'TIERRA DEL FUEGO', u'TIERRA DEL FUEGO'),
-  (u'TUCUMÁN', u'TUCUMÁN'),
-)
 
-CIRC = (
-  (u'SANTA FE', u'SANTA FE'),
-  (u'ROSARIO', u'ROSARIO'),
-)
+def caratula(request):
+    if request.method == 'POST':  # If the form has been submitted...
+        # CaratulaForm was defined in the previous section
+        form = CaratulaForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
+            # Process the data in form.cleaned_data
+            # ...
+            expediente_id = form.cleaned_data['expte_nro']
+            inmueble = form.cleaned_data['inmueble']
+            tomo = form.cleaned_data['tomo']
+            par = form.cleaned_data['par']
+            folio = form.cleaned_data['folio']
+            numero = form.cleaned_data['numero']
+            fecha = form.cleaned_data['fecha']
+            obs = form.cleaned_data['obs']
 
-NOTA = (
-  (u'DECLARATORIA DE HEREDEROS', u'DECLARATORIA DE HEREDEROS'),
-  (u'CESIÓN DE DERECHOS', u'CESIÓN DE DERECHOS'),
-  (u'USUFRUCTO', u'USUFRUCTO'),
-)
+            e = get_object_or_404(Expediente, id=expediente_id)
+            template = loader.get_template('caratula.html')
+            context = Context({
+                'e': e,
+                'inmueble': inmueble,
+                'tomo': tomo,
+                'par': par,
+                'folio': folio,
+                'numero': numero,
+                'fecha_dominio': fecha,
+                'obs': obs,
+            })
+            return HttpResponse(template.render(context))
+    else:
+        form = CaratulaForm()  # An unbound form
+
+    return render(request, 'caratula_form.html', {
+        'form': form,
+    })
+
 
 class SolicitudForm(forms.Form):
-    expte_nro = forms.IntegerField(widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
+    expte_nro = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
     circunscripcion = forms.ChoiceField(choices=CIRC, initial=u'SANTA FE')
-    domicilio_fiscal = forms.CharField(max_length=40, widget=forms.TextInput(attrs={'placeholder': 'ej: San Martín 430'}))
+    domicilio_fiscal = forms.CharField(max_length=40, widget=forms.TextInput(
+        attrs={'placeholder': 'ej: San Martín 430'}))
     localidad = forms.ChoiceField(choices=CP, initial=u'GÁLVEZ')
     provincia = forms.ChoiceField(choices=PROV, initial=u'SANTA FE')
-    nota_titulo = forms.ChoiceField(choices=NOTA, initial=u'DECLARATORIA DE HEREDEROS')
-    nota = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Ingrese el texto de la nota correspondiente'}), required=False)
+    nota_titulo = forms.ChoiceField(
+        choices=NOTA, initial=u'DECLARATORIA DE HEREDEROS')
+    nota = forms.CharField(widget=forms.Textarea(attrs={
+        'placeholder': 'Ingrese el texto de la nota correspondiente'
+        }), required=False)
 
-def solic(request):
-    if request.method == 'POST': # If the form has been submitted...
+
+def solicitud(request):
+    if request.method == 'POST':  # If the form has been submitted...
         # SolicitudForm was defined in the previous section
-        form = SolicitudForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+        form = SolicitudForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             # Process the data in form.cleaned_data
             # ...
             expediente_id = form.cleaned_data['expte_nro']
             circunscripcion = form.cleaned_data['circunscripcion']
             domicilio_fiscal = form.cleaned_data['domicilio_fiscal']
-            #codigo_postal = form.cleaned_data['localidad']
+            # codigo_postal = form.cleaned_data['localidad']
             loc = form.cleaned_data['localidad']
             localidad = CP_dict[loc].split(' - ')[0]
-            codigo_postal =  CP_dict[loc].split(' - ')[1]
+            codigo_postal = CP_dict[loc].split(' - ')[1]
             provincia = form.cleaned_data['provincia']
             nota_titulo = form.cleaned_data['nota_titulo']
             nota = form.cleaned_data['nota']
 
             e = get_object_or_404(Expediente, id=expediente_id)
             template = loader.get_template('solic.html')
-            context  = Context({
+            context = Context({
                 'e': e,
                 'domfiscal': domicilio_fiscal,
                 'circunscripcion': circunscripcion,
@@ -1067,87 +415,23 @@ def solic(request):
             })
             return HttpResponse(template.render(context))
     else:
-        form = SolicitudForm() # An unbound form
+        form = SolicitudForm()  # An unbound form
 
     return render(request, 'solic_form.html', {
         'form': form,
     })
 
-#
-# Visacion Comunal/Municipal
-#
-
-LUGAR = (
-  (0,  u'GÁLVEZ'),
-  (1,  u'AROCENA'),
-  (2,  u'BARRANCAS'),
-  (3,  u'BERNARDO DE IRIGOYEN'),
-  (4,  u'CAMPO PIAGGIO'),
-  (5,  u'CARRIZALES'),
-  (6,  u'CASALEGNO'),
-  (7,  u'COLONIA BELGRANO'),
-  (8,  u'CORONDA'),
-  (9,  u'DÍAZ'),
-  (10, u'GABOTO'),
-  (11, u'GESSLER'),
-  (12, u'IRIGOYEN'),
-  (13, u'LARRECHEA'),
-  (14, u'LOMA ALTA'),
-  (15, u'LÓPEZ'),
-  (16, u'MACIEL'),
-  (17, u'MATILDE'),
-  (18, u'MONJE'),
-  (19, u'OLIVEROS'),
-  (20, u'SAN CARLOS CENTRO'),
-  (21, u'SAN EUGENIO'),
-  (22, u'SAN FABIÁN'),
-  (23, u'SAN GENARO'),
-  (24, u'SAN MARIANO'),
-  (25, u'SAN MARTÍN DE LAS ESCOBAS'),
-  (26, u'SANTA CLARA DE BUENA VISTA'),
-  (27, u'CENTENO'),
-)
-
-Lugar_dict = {
-  0:  (u'Sr. Secretario de Obras, Servicios Públicos y Gestión', u'MUNICIPALIDAD DE GÁLVEZ'),
-  1:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO AROCENA'),
-  2:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO BARRANCAS'),
-  3:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO BERNARDO DE IRIGOYEN'),
-  4:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO CAMPO PIAGGIO'),
-  5:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO CARRIZALES'),
-  6:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO CASALEGNO'),
-  7:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO COLONIA BELGRANO'),
-  8:  (u'Sr. Secretario de Obras y Servicios Públicos', u'MUNICIPALIDAD DE CORONDA'),
-  9:  (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO ESTACIÓN DÍAZ'),
-  10: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO GABOTO'),
-  11: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO GESSLER'),
-  12: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO IRIGOYEN'),
-  13: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO LARRECHEA'),
-  14: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO LOMA ALTA'),
-  15: (u'Sra. Presidenta de la Comisión Comunal de', u'PUEBLO LÓPEZ'),
-  16: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO MACIEL'),
-  17: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO MATILDE'),
-  18: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO MONJE'),
-  19: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO OLIVEROS'),
-  20: (u'Sr. Secretario de Obras y Servicios Públicos', u'MUNICIPALIDAD DE SAN CARLOS CENTRO'),
-  21: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN EUGENIO'),
-  22: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN FABIAN'),
-  23: (u'Sr. Intendente Municipal', u'MUNICIPALIDAD DE SAN GENARO'),
-  24: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN MARIANO'),
-  25: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SAN MARTÍN DE LAS ESCOBAS'),
-  26: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO SANTA CLARA DE BUENA VISTA'),
-  27: (u'Sr. Presidente de la Comisión Comunal', u'PUEBLO CENTENO'),
-}
 
 class VisacionForm(forms.Form):
     expte_nro = forms.IntegerField()
     lugar = forms.ChoiceField(choices=LUGAR, initial=0)
 
+
 def visacion(request):
-    if request.method == 'POST': # If the form has been submitted...
+    if request.method == 'POST':  # If the form has been submitted...
         # VisacionForm was defined in the previous section
-        form = VisacionForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+        form = VisacionForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             # Process the data in form.cleaned_data
             # ...
             eid = form.cleaned_data['expte_nro']
@@ -1156,13 +440,19 @@ def visacion(request):
             localidad = Lugar_dict[int(lugar)][1]
 
             e = get_object_or_404(Expediente, id=eid)
-            return render_to_response('visac.html', {"e": e, "sr": sr, "localidad": localidad}, context_instance=RequestContext(request)) # Redirect after POST
+            # Redirect after POST
+            return render_to_response('visac.html', {
+                "e": e,
+                "sr": sr,
+                "localidad": localidad
+            }, context_instance=RequestContext(request))
     else:
-        form = VisacionForm() # An unbound form
+        form = VisacionForm()  # An unbound form
 
     return render(request, 'visac_form.html', {
         'form': form,
     })
+
 
 #
 # Buscar Plano por Nro
@@ -1171,15 +461,17 @@ class PlanoForm(forms.Form):
     circunscripcion = forms.IntegerField(min_value=1, max_value=2, initial=1)
     nro_inscripcion = forms.IntegerField(min_value=1, max_value=999999)
 
+
 def plano(request):
-    if request.method == 'POST': # If the form has been submitted...
-        form = PlanoForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+    if request.method == 'POST':  # If the form has been submitted...
+        form = PlanoForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             circ = form.cleaned_data['circunscripcion']
             nro = form.cleaned_data['nro_inscripcion']
-            return HttpResponseRedirect('%s/planos/%s/%06d.pdf' % (ftp_url, circ, nro))
+            return HttpResponseRedirect(
+                '%s/planos/%s/%06d.pdf' % (ftp_url, circ, nro))
     else:
-        form = PlanoForm() # An unbound form
+        form = PlanoForm()  # An unbound form
 
     return render(request, 'plano_form.html', {
         'form': form,
@@ -1188,19 +480,23 @@ def plano(request):
 #
 # Buscar Set de Datos por PII
 #
+
+
 class SetForm(forms.Form):
     partida = forms.IntegerField(min_value=1, max_value=999999)
     sub_pii = forms.IntegerField(min_value=0, max_value=9999, initial=0)
 
+
 def set(request):
-    if request.method == 'POST': # If the form has been submitted...
-        form = SetForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+    if request.method == 'POST':  # If the form has been submitted...
+        form = SetForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             pii = form.cleaned_data['partida']
             sub_pii = form.cleaned_data['sub_pii']
-            return HttpResponseRedirect('%s/set/%06d%04d.pdf' % (ftp_url, pii, sub_pii))
+            return HttpResponseRedirect(
+                '%s/set/%06d%04d.pdf' % (ftp_url, pii, sub_pii))
     else:
-        form = SetForm() # An unbound form
+        form = SetForm()  # An unbound form
 
     return render(request, 'set_form.html', {
         'form': form,
@@ -1209,6 +505,8 @@ def set(request):
 #
 # Calcular Digito Verificador de la PII
 #
+
+
 def get_dvapi(dp, ds, sd, pii, subpii):
     coef = '9731'
     _coef = coef + coef + coef + coef
@@ -1219,23 +517,28 @@ def get_dvapi(dp, ds, sd, pii, subpii):
         suma += int(m[len(m) - 1])
     return (10 - (suma % 10)) % 10
 
+
 def dvapi(request):
-    if request.method == 'POST': # If the form has been submitted...
-        form = DVAPIForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+    if request.method == 'POST':  # If the form has been submitted...
+        form = DVAPIForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             dp = form.cleaned_data['dp']
             ds = form.cleaned_data['ds']
             sd = form.cleaned_data['sd']
             pii = form.cleaned_data['partida']
             sub_pii = form.cleaned_data['sub_pii']
             dv = get_dvapi(dp, ds, sd, pii, sub_pii)
-            return render_to_response('dvapi.html', {"dv": dv}, context_instance=RequestContext(request))
+            return render_to_response('dvapi_form.html', {
+                'dv': dv,
+                'form': form
+            }, context_instance=RequestContext(request))
     else:
-        form = DVAPIForm() # An unbound form
+        form = DVAPIForm()  # An unbound form
 
     return render(request, 'dvapi_form.html', {
         'form': form,
     })
+
 
 class DVAPIForm(forms.Form):
     dp = forms.IntegerField(min_value=1, max_value=19, initial=11)
@@ -1249,35 +552,44 @@ class DVAPIForm(forms.Form):
 # Presupuestos
 #
 #
-from gea.models import Persona, Objeto, Lugar, Partida
+
 
 def presup(request, persona=None, objeto=None):
-    #p = get_object_or_404(Persona, =eid)
-    return render_to_response('presup.html', {"persona": persona, "objeto": objeto}, context_instance=RequestContext(request))
+    # p = get_object_or_404(Persona, =eid)
+    return render_to_response('presup.html', {
+        "persona": persona,
+        "objeto": objeto
+    }, context_instance=RequestContext(request))
+
 
 class PresupForm(forms.Form):
-    persona = forms.ModelChoiceField(queryset=Persona.objects.all(), empty_label=None)
-    objeto  = forms.ModelChoiceField(queryset=Objeto.objects.all(), empty_label=None)
-    lugar   = forms.ModelChoiceField(queryset=Lugar.objects.all())
+    persona = forms.ModelChoiceField(
+        queryset=Persona.objects.all(), empty_label=None)
+    objeto = forms.ModelChoiceField(
+        queryset=Objeto.objects.all(), empty_label=None)
+    lugar = forms.ModelChoiceField(queryset=Lugar.objects.all())
     partida = forms.ModelChoiceField(queryset=Partida.objects.all())
-    monto   = forms.FloatField(required=False)
+    monto = forms.FloatField(required=False)
+
 
 def presup_form(request):
-    if request.method == 'POST': # If the form has been submitted...
-        # VisacionForm was defined in the previous section
-        form = PresupForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+    if request.method == 'POST':  # If the form has been submitted...
+            # VisacionForm was defined in the previous section
+        form = PresupForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             # Process the data in form.cleaned_data
             # ...
             persona = form.cleaned_data['persona']
-            objeto  = form.cleaned_data['objeto']
-            lugar   = form.cleaned_data['lugar']
-            partida = form.cleaned_data['partida']
-            monto   = form.cleaned_data['monto']
+            objeto = form.cleaned_data['objeto']
+            # lugar = form.cleaned_data['lugar']
+            # partida = form.cleaned_data['partida']
+            # monto = form.cleaned_data['monto']
 
-            return HttpResponseRedirect('/gea/presup/%s/%s' % (persona, objeto)) # Redirect after POST
+            # Redirect after POST
+            return HttpResponseRedirect(
+                '/gea/presup/%s/%s' % (persona, objeto))
     else:
-        form = PresupForm() # An unbound form
+        form = PresupForm()  # An unbound form
 
     return render(request, 'presup_form.html', {
         'form': form,
@@ -1288,43 +600,56 @@ def presup_form(request):
 # Exptes x Catastro Local
 #
 #
-from django.forms import ModelForm
-from gea.models import CatastroLocal
 
-# class CLForm(ModelForm):
-    # class Meta:
-        # model = CatastroLocal
 
 class CLForm(forms.Form):
-    lugar   = forms.ModelChoiceField(queryset=Lugar.objects.exclude(nombre__startswith='Colonia').exclude(nombre__startswith='Zona Rural').exclude(nombre__startswith='Zona de Islas'), required=False)
-    seccion	 = forms.CharField(max_length=4, required=False)
-    manzana	 = forms.CharField(max_length=4, required=False)
-    parcela	 = forms.CharField(max_length=4, required=False)
+    lugar = forms.ModelChoiceField(queryset=Lugar.objects.exclude(
+        nombre__startswith='Colonia').exclude(
+            nombre__startswith='Zona Rural').exclude(
+                nombre__startswith='Zona de Islas'), required=False)
+    seccion = forms.CharField(max_length=4, required=False)
+    manzana = forms.CharField(max_length=4, required=False)
+    parcela = forms.CharField(max_length=4, required=False)
+
 
 def catastro(request):
-    if request.method == 'POST': # If the form has been submitted...
+    if request.method == 'POST':  # If the form has been submitted...
         # VisacionForm was defined in the previous section
-        form = CLForm(request.POST) # A form bound to the POST data
-        if form.is_valid(): # All validation rules pass
+        form = CLForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
             # Process the data in form.cleaned_data
             # ...
-            lugar    = form.cleaned_data['lugar']
-            seccion  = form.cleaned_data['seccion']
-            manzana  = form.cleaned_data['manzana']
-            parcela  = form.cleaned_data['parcela']
+            lugar = form.cleaned_data['lugar']
+            seccion = form.cleaned_data['seccion']
+            manzana = form.cleaned_data['manzana']
+            parcela = form.cleaned_data['parcela']
 
             filtro = u'?'
-            if lugar != None:
-                filtro  = u'%s%s%s' % (filtro, u'&expedientelugar__lugar__nombre=', lugar)
+            if lugar is not None:
+                filtro = u'%s%s%s' % (
+                    filtro, u'&expedientelugar__lugar__nombre=', lugar)
             if seccion != '':
-                filtro  = u'%s%s%s' % (filtro, u'&expedientelugar__catastrolocal__seccion=', seccion)
+                filtro = u'%s%s%s' % (
+                    filtro,
+                    u'&expedientelugar__catastrolocal__seccion=',
+                    seccion
+                )
             if manzana != '':
-                filtro  = u'%s%s%s' % (filtro, u'&expedientelugar__catastrolocal__manzana=', manzana)
+                filtro = u'%s%s%s' % (
+                    filtro,
+                    u'&expedientelugar__catastrolocal__manzana=',
+                    manzana
+                )
             if parcela != '':
-                filtro  = u'%s%s%s' % (filtro, u'&expedientelugar__catastrolocal__parcela=', parcela)
-            return HttpResponseRedirect('/admin/gea/expediente/%s' % filtro) # Redirect after POST
+                filtro = u'%s%s%s' % (
+                    filtro,
+                    u'&expedientelugar__catastrolocal__parcela=',
+                    parcela
+                )
+            # Redirect after POST
+            return HttpResponseRedirect('/admin/gea/expediente/%s' % filtro)
     else:
-        form =CLForm() # An unbound form
+        form = CLForm()  # An unbound form
 
     return render(request, 'catastro_form.html', {
         'form': form,

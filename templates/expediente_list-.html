@@ -1,0 +1,87 @@
+{% extends "menu.html" %}
+{% block title %}GEA | Listado de Expedientes{% endblock title %}
+
+{# set menu in active mode #}
+{% block nav-list-exp %} class="active"{% endblock %}
+
+{% block content %}
+<div class="page-header">
+<form class="navbar-form navbar-right" action="." method="get">
+  <strong>{{ count }}</strong> expediente{% if count > 1 %}s{% endif %}
+  {% if request.GET.search %}contiene{% if count > 1 %}n{% endif %} "{{ request.GET.search }}"{% endif %}
+  <input id="search" name="search" type="text" placeholder="Expediente o Plano" class="form-control">
+  <button type="submit" class="btn btn-success"><i class="fa fa-search"></i></button>
+</form>
+  <h1><i class="fa fa-folder"></i> <a href="{% url 'expedientes' %}">Listado de Expedientes</a></h1>
+</div>
+{% include "_pagination.html" %}
+<table class="table table-bordered table-condensed table-hover">
+  <thead>
+    <tr>
+      <th>Expediente</th>
+      <th>Persona(s)</th>
+      <th>Lugar(es)</th>
+      <th>Partida(s)</th>
+      <th>Plano</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in object_list %}
+    <tr
+    {% if e.cancelado %}
+    class="danger"
+    {% elif e.orden_numero and not e.inscripcion_numero %}
+    class="warning"
+    {% endif %}>
+      <td>
+        <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a>
+        <!--<a href="{% url 'expediente' e.id %}">{{ e.id }}</a>-->
+      </td>
+      <td>
+      {% if e.cancelado %}<strong>CANCELADO:</strong> {{ e.cancelado_por }}<br>{% endif %}
+      {% if e.expedientepersona_set %}
+        {% for ep in e.expedientepersona_set.all %}
+        <a href="/admin/gea/persona/{{ ep.persona.id }}/">{{ ep.persona.apellidos }} {{ ep.persona.nombres }}</a>
+        {% if ep.comitente %}(Comitente){% endif %}
+        {% if ep.persona.telefono %}({{ ep.persona.telefono }}){% endif %}
+        {% if ep.persona.celular %}({{ ep.persona.celular }}){% endif %}
+        <br>
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+      {% if e.expedientelugar_set %}
+        {% for el in e.expedientelugar_set.all %}
+        <a href="/admin/gea/lugar/{{ el.lugar.id }}/">{{ el.lugar.nombre }}</a> {% for cl in el.catastrolocal_set.all %}<br />{{ cl }}{% endfor %}
+          {% if not forloop.last %}<br />{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+      {% if e.expedientepartida_set %}
+        {% for ep in e.expedientepartida_set.all %}
+          {% if ep.set_ruta %}<a href="{{ ep.set_ruta }}">{% endif %}{{ ep.partida.sd }}-{{ ep.partida }}{% if ep.set_ruta %}</a>{% endif %}
+          {% if not forloop.last %}<br />{% endif %}
+        {% endfor %}
+      {% endif %}
+      </td>
+      <td>
+        {% spaceless %}
+        {% if e.plano_ruta %}<a href="{{ e.plano_ruta }}">{% endif %}
+        {% if e.duplicado %}Dup.{% endif %}
+        {% if e.inscripcion_numero %}{{ e.inscripcion_numero }}{% endif %}{% if e.plano_ruta %}</a>{% endif %}
+        {% if e.inscripcion_fecha %}<br>({{ e.inscripcion_fecha }}){% endif %}
+        {% endspaceless %}
+      </td>
+    </tr>
+    {% empty %}
+    <div class="alert alert-info" role="alert">
+      <i class="fa fa-info-circle" aria-hidden="true"></i>
+      <span class="sr-only">Información:</span>
+      No se encontraron Expedientes.
+    </div>
+    {% endfor %}
+  </tbody>
+</table>
+{% include "_pagination.html" %}
+{% endblock content %}

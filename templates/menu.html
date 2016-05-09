@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block menu %}
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{% url 'home' %}"><i class="fa fa-globe"></i> GEA</a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <!-- Listados -->
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-list"></i> Listados <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li{% block nav-list-exp %}{% endblock %}><a href="{% url 'expedientes' %}"><i class="fa fa-folder"></i> Expedientes</a></li>
+                <li{% block nav-list-per %}{% endblock %}><a href="{% url 'personas' %}"><i class="fa fa-users"></i> Personas</a></li>
+                <li{% block nav-list-cl %}{% endblock %}><a href="{% url 'catastros_locales' %}"><i class="fa fa-map-signs"></i> Catatros Locales</a></li>
+              </ul>
+            </li>
+            <!-- Notas -->
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-paperclip"></i> Notas <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li{% block nav-carat %}{% endblock %}><a href="{% url 'caratula' %}"><i class="fa fa-map"></i> Carátula Sencilla de Plano de Mensura</a></li>
+                <li{% block nav-solic %}{% endblock %}><a href="{% url 'solicitud' %}"><i class="fa fa-sticky-note"></i> Solicitud de Inscripcion SCIT</a></li>
+                <li{% block nav-visac %}{% endblock %}><a href="{% url 'visacion' %}"><i class="fa fa-sticky-note"></i> Visación Comunal/Municipal</a></li>
+              </ul>
+            </li>
+            <!-- Buscar -->
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-search"></i> Buscar <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li{% block nav-search-plano %}{% endblock %}><a href="/gea/plano/"><i class="fa fa-map"></i> Nº de Plano</a></li>
+                <li{% block nav-search-set %}{% endblock %}><a href="/gea/set/"><i class="fa fa-sticky-note"></i> Informe Catastral</a></li>
+                <li{% block nav-search-cl %}{% endblock %}><a href="/gea/catastro/"><i class="fa fa-map-signs"></i> Catastros locales</a></li>
+              </ul>
+            </li>
+            <!-- Herramientas -->
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-wrench"></i> Herramientas <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li{% block nav-tool-dvapi %}{% endblock %}><a href="{% url 'dvapi' %}"><i class="fa fa-calculator"></i> Dígito Verificador API</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <!-- admin -->
+            <li><a href="/admin/"><i class="fa fa-user"></i> admin</a></li>
+            <!-- Acerca de -->
+            <li><a href="#"><i class="fa fa-info-circle"></i> Acerca de</a></li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+{% endblock menu %}

@@ -1,5 +1,7 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 from django.contrib import admin
-from nested_admin import NestedAdmin, NestedStackedInline
+from nested_admin import NestedModelAdmin, NestedStackedInline, NestedTabularInline
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response, RequestContext
 from django.contrib.admin import helpers
@@ -152,6 +154,25 @@ class TienePlanoFilter(admin.SimpleListFilter):
             # Q(plano_ruta__exact=''))
 
 
+class TieneSetFilter(admin.SimpleListFilter):
+    title = _('tiene informe cargado')
+    parameter_name = 'informe'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('si', _('Si')),
+            ('no', _('No')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'si':
+            return queryset.exclude(set_ruta__isnull=True)
+        if self.value() == 'no':
+            return queryset.exclude(set_ruta__isnull=False)
+            # return queryset.filter(Q(plano_ruta__isnull=True) |
+            # Q(plano_ruta__exact=''))
+
+
 # Personas
 class CantidadDeExpedientesPorPersonaFilter(admin.SimpleListFilter):
     title = _('cantidad de expedientes por persona')
@@ -219,19 +240,24 @@ class CantidadDeExpedientesPorObjetoFilter(admin.SimpleListFilter):
 
 
 class AntecedenteAdmin(admin.ModelAdmin):
+    list_filter = [
+        'inscripcion_numero',
+        'duplicado',
+        TienePlanoFilter,
+        ]
     list_display = (
         'expediente',
         'expediente_modificado',
         'inscripcion_numero',
         'duplicado',
         'obs',
-        'plano_ruta')
-    list_editable = (
-        'expediente_modificado',
-        'inscripcion_numero',
-        'duplicado',
-        'obs',
-        'plano_ruta')
+        'show_plano_ruta')
+#    list_editable = (
+#        'expediente_modificado',
+#        'inscripcion_numero',
+#        'duplicado',
+#        'obs')
+#        'plano_ruta')
     search_fields = ['expediente__id', 'expediente_modificado__id',
                      'inscripcion_numero', 'duplicado', 'obs']
     actions_on_bottom = True
@@ -264,7 +290,7 @@ class CatastroAdmin(admin.ModelAdmin):
 admin.site.register(Catastro, CatastroAdmin)
 
 
-class CatastroLocalAdmin(NestedAdmin):
+class CatastroLocalAdmin(NestedModelAdmin):
     list_display = (
         'seccion', 'manzana', 'parcela', 'subparcela', 'suburbana', 'poligono')
     list_filter = ['seccion', 'manzana']
@@ -331,13 +357,11 @@ class SdAdmin(admin.ModelAdmin):
 admin.site.register(Sd, SdAdmin)
 
 
-#class CatastroLocalInline(admin.StackedInline):
-class CatastroLocalInline(NestedStackedInline):
+class CatastroLocalInline(NestedTabularInline):
     model = CatastroLocal
     extra = 0
 
 
-#class ExpedienteLugarInline(admin.TabularInline):
 class ExpedienteLugarInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     #inline_classes = ('grp-collapse grp-closed',)
@@ -347,13 +371,11 @@ class ExpedienteLugarInline(NestedStackedInline):
 
 
 class ExpedienteObjetoInline(admin.TabularInline):
-#class ExpedienteObjetoInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedienteObjeto
     extra = 0
 
 
-#class ExpedientePersonaInline(admin.TabularInline):
 class ExpedientePersonaInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedientePersona
@@ -362,7 +384,6 @@ class ExpedientePersonaInline(NestedStackedInline):
 
 
 class ExpedienteProfesionalInline(admin.TabularInline):
-#class ExpedienteProfesionalInline(NestedStackedInline):
     classes = ('grp-collapse grp-open',)
     model = ExpedienteProfesional
     extra = 0
@@ -399,17 +420,19 @@ class PresupuestoInline(NestedStackedInline):
     inlines = [PagoInline]
 
 
-class ExpedienteAdmin(NestedAdmin):
+class ExpedienteAdmin(NestedModelAdmin):
     fieldsets = [
         (None, {
-            'fields': [('id', 'fecha_plano', 'mensuras')],
+#            'fields': [('id', 'fecha_plano', 'mensuras')],
+            'fields': [('id', 'fecha_plano')],
             'classes': ('extrapretty'),
         }),
-        ('Catastro', {
-            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion')],
+        ('SCIT - Servicio de Catastro e Información Territorial', {
+#            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion')],
+            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado')],
             'classes': ('extrapretty', 'grp-collapse grp-open',),
         }),
-        ('Colegio', {
+        ('Orden de Trabajo CoPA - Colegio de Profesionales de la Agrimensura', {
             'fields': [('orden_numero', 'orden_fecha')],
             'classes': ('extrapretty', 'grp-collapse grp-open',),
         }),
@@ -431,11 +454,12 @@ class ExpedienteAdmin(NestedAdmin):
         'inscripcion_numero',
         'inscripcion_fecha',
         'duplicado',
-        'sin_inscripcion',
+#        'sin_inscripcion',
         'orden_numero',
         'orden_fecha',
         'cancelado',
         'show_plano_ruta')
+        #'plano_ruta')
     list_editable = (
         'fecha_plano',
         'inscripcion_numero',
@@ -443,9 +467,10 @@ class ExpedienteAdmin(NestedAdmin):
         'duplicado',
         'orden_numero',
         'orden_fecha',
-        'sin_inscripcion',
+#        'sin_inscripcion',
         'cancelado')
-    list_filter = [InscriptoFilter, 'duplicado', 'sin_inscripcion',
+        #'plano_ruta')
+    list_filter = [InscriptoFilter, 'duplicado', #'sin_inscripcion',
                    TieneOrdenFilter, TieneOrdenPendienteFilter, 'cancelado',
                    'cancelado_por', TienePlanoFilter,
                    'expedientelugar__lugar__nombre',
@@ -518,7 +543,9 @@ admin.site.register(ExpedienteLugar, ExpedienteLugarAdmin)
 class ExpedientePartidaAdmin(admin.ModelAdmin):
     inlines = [CatastroInline]
     list_display = ('expediente', 'partida', 'show_set_ruta')
-    search_fields = ['expediente__id', 'partida__pii']
+    #list_editable = ('set_ruta',)
+    list_filter = [TieneSetFilter,]
+    search_fields = ['expediente__id', 'partida__pii',]
     list_select_related = True
     list_per_page = 20
 
@@ -692,7 +719,7 @@ class ProfesionalAdmin(admin.ModelAdmin):
 admin.site.register(Profesional, ProfesionalAdmin)
 
 
-class PresupuestoAdmin(NestedAdmin):
+class PresupuestoAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {
             'fields': [

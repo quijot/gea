@@ -1,9 +1,11 @@
+migrations
 *.log
 *.pot
 *.pyc
 local_settings.py
+ToDo
 
 backup/db/*.gz
 backup/files
-backup/files/*.gz
+backup/files/*
 backup/sql
