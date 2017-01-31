@@ -4,8 +4,8 @@ from django.conf.urls import url
 
 from gea.views import Home, catastros_locales, lugares, secciones, manzanas, \
 parcelas, listado_alfabetico, caratula, solicitud, visacion, plano, set, \
-catastro, dvapi, ExpedienteList, ExpedienteDetail, PersonaList, PersonaDetail, \
-CatastroLocalList
+catastro, dvapi, sie, ExpedienteList, ExpedienteDetail, PersonaList, \
+PersonaDetail, CatastroLocalList, calendar
 
 urlpatterns = [
     url(r'^$', Home.as_view(), name='home'),
@@ -41,4 +41,7 @@ urlpatterns = [
     url(r'^catastro/$', catastro),
     # Herramientas
     url(r'^dvapi/$', dvapi, name='dvapi'),
+    url(r'^sie/$', sie, name='sie'),
+    url(r'^cal/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', calendar, name='cal'),
+#    url(r'^cal/$', calendar, name='cal'),
 ]

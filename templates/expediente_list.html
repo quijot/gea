@@ -19,8 +19,8 @@
       <input type="checkbox" name="cancelado" class="checkbox-inline" {% if request.GET.cancelado %}checked{% endif %}> Cancelado
       <input type="checkbox" name="sin_inscr" class="checkbox-inline" {% if request.GET.sin_inscr %}checked{% endif %}> No requiere inscripción
       <div class="input-group input-group-sm">
-        <span class="input-group-addon"><i class="fa fa-folder"></i> N&ordm;</span>
-        <input type="text" id="search" name="search" placeholder="Expediente/Plano" class="form-control" value="{{ request.GET.search }}">
+        <span class="input-group-addon"><i class="fa fa-folder"></i> <i class="fa fa-user"></i> <i class="fa fa-thumb-tack"></i></span>
+        <input type="text" id="search" name="search" placeholder="Expediente/Persona/Lugar/PII/Plano" class="form-control" value="{{ request.GET.search }}" size="35">
         <span class="input-group-btn"><button type="submit" class="btn btn-sm btn-success"><i class="fa fa-search"></i></button></span>
       </div>
       <div class="btn-group">

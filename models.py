@@ -3,6 +3,10 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django_extensions.db.models import (
+    TitleSlugDescriptionModel, TimeStampedModel)
+#from django.urls import reverse
+from django.core.urlresolvers import reverse
 
 
 def CapitalizePhrase(string):
@@ -15,7 +19,12 @@ def CapitalizePhrase(string):
 class CharNullField(models.CharField):  # subclass the CharField
     description = "CharField that stores NULL but returns ''"
     # this ensures to_python will be called
-    __metaclass__ = models.SubfieldBase
+#    __metaclass__ = models.SubfieldBase
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return u''
+        return value
 
     # this is the value right out of the db, or an instance
     def to_python(self, value):
@@ -39,7 +48,12 @@ class CharNullField(models.CharField):  # subclass the CharField
 class URLNullField(models.URLField):  # subclass the URLField
     description = "URLField that stores NULL but returns ''"
     # this ensures to_python will be called
-    __metaclass__ = models.SubfieldBase
+#    __metaclass__ = models.SubfieldBase
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return u''
+        return value
 
     # this is the value right out of the db, or an instance
     def to_python(self, value):
@@ -63,7 +77,12 @@ class URLNullField(models.URLField):  # subclass the URLField
 class EmailNullField(models.EmailField):  # subclass the EmailField
     description = "EmailField that stores NULL but returns ''"
     # this ensures to_python will be called
-    __metaclass__ = models.SubfieldBase
+#    __metaclass__ = models.SubfieldBase
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return u''
+        return value
 
     # this is the value right out of the db, or an instance
     def to_python(self, value):
@@ -98,9 +117,6 @@ class Antecedente(models.Model):
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
 
-    class Meta:
-        db_table = 'antecedente'
-
 
 class Catastro(models.Model):
     id = models.AutoField(primary_key=True)
@@ -115,10 +131,7 @@ class Catastro(models.Model):
     subparcela = CharNullField(
         max_length=10, null=True, blank=True, default=None)
 
-    class Meta:
-        db_table = 'catastro'
-
-    def __unicode__(self):
+    def __str__(self):
         if str(self.zona) in ('1', '2', '3'):
             return u''.join(('Z:',str(self.zona),' - S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
         elif str(self.zona) in ('4', '5'):
@@ -140,10 +153,10 @@ class CatastroLocal(models.Model):
         max_length=20, null=True, blank=True, default=None)
 
     class Meta:
-        db_table = 'catastro_local'
-        verbose_name_plural = 'catastros_locales'
+        verbose_name = 'catastro local'
+        verbose_name_plural = 'catastros locales'
 
-    def __unicode__(self):
+    def __str__(self):
         return u''.join(('S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
 
 
@@ -153,11 +166,10 @@ class Circunscripcion(models.Model):
     orden = CharNullField(max_length=7)
 
     class Meta:
-        db_table = 'circunscripcion'
         ordering = ['id']
         verbose_name_plural = 'circunscripciones'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -165,10 +177,7 @@ class Comprobante(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = CharNullField(max_length=50)
 
-    class Meta:
-        db_table = 'comprobante'
-
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -182,10 +191,9 @@ class Presupuesto(models.Model):
     obs = CharNullField(max_length=255, null=True, blank=True, default=None)
 
     class Meta:
-        db_table = 'presupuesto'
         ordering = ['expediente']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s - $%s - %s' % (self.expediente, str(self.monto),
         str(self.fecha))
 
@@ -200,10 +208,7 @@ class Pago(models.Model):
     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
     obs = CharNullField(max_length=255, null=True, blank=True, default=None)
 
-    class Meta:
-        db_table = 'pago'
-
-    def __unicode__(self):
+    def __str__(self):
         return u'%s%% - %s' % (str(self.porcentaje), str(self.fecha))
 
 
@@ -219,11 +224,10 @@ class Dp(models.Model):
         return u'%02d %s' % (self.dp, self.nombre)
 
     class Meta:
-        db_table = 'dp'
         verbose_name_plural = 'Departamentos'
         ordering = ['dp']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%02d' % self.dp
 
 
@@ -237,11 +241,10 @@ class Ds(models.Model):
         return u'%02d' % self.ds
 
     class Meta:
-        db_table = 'ds'
         verbose_name_plural = 'distritos'
         ordering = ['dp', 'ds']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%02d' % self.ds
 
 
@@ -269,18 +272,19 @@ class Sd(models.Model):
     ds_nombre.short_description = 'Ds nombre'
 
     class Meta:
-        db_table = 'sd'
         verbose_name_plural = 'subdistritos'
         ordering = ['ds', 'sd']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s%s%02d' % (self.ds.dp, self.ds, self.sd)
 
 
-class Expediente(models.Model):
+#class Expediente(models.Model):
+class Expediente(TimeStampedModel):
 #    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.IntegerField('Expediente Nº', primary_key=True)
     fecha_plano = models.DateField(null=True, blank=True, default=None)
+    fecha_medicion = models.DateField(null=True, blank=True, default=None)
 #    mensuras = models.SmallIntegerField(
 #        null=True, blank=True, choices=MENSURAS, default=1,
 #        verbose_name='cantidad de mensuras')
@@ -289,12 +293,17 @@ class Expediente(models.Model):
     duplicado = models.BooleanField(default=False)
     orden_numero = models.IntegerField('CoPA Expendiente Nº', null=True, blank=True, default=None)
     orden_fecha = models.DateField('Fecha contrato', null=True, blank=True, default=None)
-#    sin_inscripcion = models.BooleanField(default=False)
+    sin_inscripcion = models.BooleanField(default=False)
     cancelado = models.BooleanField(default=False)
     cancelado_por = CharNullField(
         max_length=100, null=True, blank=True, default=None)
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
+    plano = models.FileField(null=True, blank=True, default=None, upload_to='planos')
+
+    def get_absolute_url(self):
+        return reverse('expediente', kwargs={'pk': str(self.id)})
+        #return "/gea/expedientes/%i" % self.id # MAL: poco portable
 
     def inscripto(self):
         return (inscripcion_numero != 0)
@@ -304,10 +313,9 @@ class Expediente(models.Model):
         return self.expedientepersona_set.filter(propietario=True).count()
 
     class Meta:
-        db_table = 'expediente'
         ordering = ['-id']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%d' % self.id
 
 #    def save(self, force_insert=False, force_update=False):
@@ -325,11 +333,11 @@ class ExpedienteLugar(models.Model):
     lugar = models.ForeignKey('Lugar')
 
     class Meta:
-        db_table = 'expediente_lugar'
-        verbose_name_plural = 'expediente_lugares'
+        verbose_name = 'lugar'
+        verbose_name_plural = 'lugares'
         ordering = ['expediente', 'lugar']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.lugar.nombre
 
 
@@ -342,11 +350,11 @@ class ExpedienteObjeto(models.Model):
     objeto = models.ForeignKey('Objeto')
 
     class Meta:
-        db_table = 'expediente_objeto'
-        verbose_name_plural = 'expediente_objetos'
+        verbose_name = 'objeto'
+        verbose_name_plural = 'objetos'
         ordering = ['expediente', 'objeto']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.objeto.nombre
 
 
@@ -356,13 +364,14 @@ class ExpedientePartida(models.Model):
     partida = models.ForeignKey('Partida')
     set_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
+    informe_catastral = models.FileField(null=True, blank=True, default=None, upload_to='set')
 
     class Meta:
-        db_table = 'expediente_partida'
-        verbose_name_plural = 'expediente_partidas'
+        verbose_name = 'partida'
+        verbose_name_plural = 'partidas'
         ordering = ['expediente', 'partida']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s' % self.partida
         #return u'%s - %s'.encode('utf-8') % (str(self.expediente), self.partida)
 
@@ -391,13 +400,13 @@ class ExpedientePersona(models.Model):
     usufructo = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'expediente_persona'
-        verbose_name_plural = 'expediente_personas'
+        verbose_name = 'persona involucrada'
+        verbose_name_plural = 'personas involucradas'
         ordering = [
             'persona__apellidos', 'persona__nombres']
 #            'mensura', 'item', 'persona__apellidos', 'persona__nombres']
 
-    def __unicode__(self):
+    def __str__(self):
        return u'%d - %s %s' % (self.expediente.id, self.persona.apellidos, self.persona.nombres)
 
 
@@ -407,12 +416,12 @@ class ExpedienteProfesional(models.Model):
     profesional = models.ForeignKey('Profesional')
 
     class Meta:
-        db_table = 'expediente_profesional'
-        verbose_name_plural = 'expediente_profesionales'
+        verbose_name = 'profesional firmante'
+        verbose_name_plural = 'profesionales firmantes'
         ordering = ['profesional__apellidos', 'profesional__nombres']
 
-    def __unicode__(self):
-        return u'%s %s' % (self.profesional.apellidos, self.profesional.nombres)
+    def __str__(self):
+        return self.profesional.nombre_completo()
 
 
 class Lugar(models.Model):
@@ -421,11 +430,10 @@ class Lugar(models.Model):
     obs = CharNullField(max_length=255, null=True, blank=True, default=None)
 
     class Meta:
-        db_table = 'lugar'
         verbose_name_plural = 'lugares'
         ordering = ['nombre']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -434,10 +442,9 @@ class Objeto(models.Model):
     nombre = CharNullField(max_length=80)
 
     class Meta:
-        db_table = 'objeto'
         ordering = ['nombre']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -453,11 +460,10 @@ class Partida(models.Model):
         return u'%s-%06d/%04d-%d' % (self.sd, self.pii, self.subpii, self.api)
 
     class Meta:
-        db_table = 'partida'
         unique_together = (('pii', 'subpii'))
         ordering = ['pii', 'subpii']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%06d/%04d-%d' % (self.pii, self.subpii, self.api)
 
 
@@ -474,7 +480,6 @@ class PartidaDominio(models.Model):
         null=True, blank=True, default=None)
 
     class Meta:
-        db_table = 'partida_dominio'
         verbose_name_plural = 'partida_dominios'
 
 
@@ -498,9 +503,12 @@ class Persona(models.Model):
         verbose_name='CUIT/CUIL/CDI')
     TIPO_DOC = ((0, 'DNI'), (1, 'LC'), (2, 'LE'), (3, 'Otro'))
     tipo_doc = models.SmallIntegerField(
-        null=True, blank=True, choices=TIPO_DOC, default=0)
+        null=True, blank=True, choices=TIPO_DOC, default=None)
     documento = models.IntegerField(
         unique=True, null=True, blank=True, default=None)
+
+    def get_absolute_url(self):
+        return reverse('persona', kwargs={'pk': str(self.id)})
 
     def nombre_completo(self):
         return (u'%s %s' % (self.apellidos, self.nombres)).strip()
@@ -512,10 +520,9 @@ class Persona(models.Model):
     show_tipo_doc.admin_order_field = 'tipo_doc'
 
     class Meta:
-        db_table = 'persona'
         ordering = ['apellidos', 'nombres']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s %s' % (self.apellidos, self.nombres)
 
     def save(self, force_insert=False, force_update=False):
@@ -552,11 +559,10 @@ class Profesional(models.Model):
         return u'%s %s' % (self.apellidos, self.nombres)
 
     class Meta:
-        db_table = 'profesional'
         verbose_name_plural = 'profesionales'
         ordering = ['apellidos', 'nombres']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s %s' % (self.apellidos, self.nombres)
 
     def save(self, force_insert=False, force_update=False):
@@ -570,10 +576,9 @@ class Titulo(models.Model):
     nombre = CharNullField(max_length=30)
 
     class Meta:
-        db_table = 'titulo'
         ordering = ['nombre']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.nombre
 
 
@@ -582,8 +587,7 @@ class Zona(models.Model):
     descripcion = CharNullField(max_length=50)
 
     class Meta:
-        db_table = 'zona'
         ordering = ['id']
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%d' % self.id

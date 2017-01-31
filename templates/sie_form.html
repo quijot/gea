@@ -1,0 +1,21 @@
+{% extends "menu.html" %}
+
+{# set menu in active mode #}
+{% block nav-tool-sie %} class="active"{% endblock %}
+
+{% block title %}GEA | Sistema de Información de Expedientes del SCIT{% endblock %}
+
+{% block content %}
+<form class="form-horizontal col-lg-6" action="." method="post">{% csrf_token %}
+  <legend><i class="fa fa-calculator"></i> Consultar estado de Expediente SCIT</legend>
+  <fieldset>
+    <div class="form-group">
+      <table class="table table-condensed table-hover">
+      {{ form.as_table }}
+      </table>
+        <button type="submit" class="btn btn-primary pull-right">Consultar</button>
+    </div>
+  </fieldset>
+</form>
+{% endblock %}
+

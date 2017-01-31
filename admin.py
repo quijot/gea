@@ -1,11 +1,27 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 from django.contrib import admin
-from nested_admin import NestedModelAdmin, NestedStackedInline, NestedTabularInline
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response, RequestContext
 from django.contrib.admin import helpers
 from django.template.response import TemplateResponse
+
+
+#try:
+#    import nested_admin as na
+#    if na.__version__.startswith('3'):
+#        from nested_admin import NestedModelAdmin, NestedStackedInline, NestedTabularInline
+#    elif na.__version__.startswith('2'):
+#        from nested_admin import NestedAdmin as NestedModelAdmin, NestedStackedInline
+#        from django.contrib.admin import TabularInline as NestedTabularInline
+#except ImportError, e:
+#    if e.message != 'No module named nested_admin':
+#        raise
+#    else:
+#        from django.contrib.admin import ModelAdmin as NestedModelAdmin, StackedInline as NestedStackedInline, TabularInline as NestedTabularInline
+from nested_admin import NestedAdmin as NestedModelAdmin, NestedStackedInline
+from django.contrib.admin import TabularInline as NestedTabularInline
+
 
 # Register your models here.
 
@@ -424,23 +440,27 @@ class ExpedienteAdmin(NestedModelAdmin):
     fieldsets = [
         (None, {
 #            'fields': [('id', 'fecha_plano', 'mensuras')],
-            'fields': [('id', 'fecha_plano')],
-            'classes': ('extrapretty'),
+            'fields': [('id', 'fecha_plano', 'created', 'modified')],
+            'classes': ('wide', 'extrapretty'),
+        }),
+        ('Estado', {
+            'fields': [('fecha_medicion', )],
+            'classes': ('wide', 'extrapretty'),
         }),
         ('SCIT - Servicio de Catastro e Información Territorial', {
-#            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion')],
-            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado')],
-            'classes': ('extrapretty', 'grp-collapse grp-open',),
+            'fields': [('inscripcion_numero', 'inscripcion_fecha', 'duplicado', 'sin_inscripcion')],
+            'classes': ('wide', 'extrapretty', 'grp-collapse grp-open',),
         }),
         ('Orden de Trabajo CoPA - Colegio de Profesionales de la Agrimensura', {
             'fields': [('orden_numero', 'orden_fecha')],
-            'classes': ('extrapretty', 'grp-collapse grp-open',),
+            'classes': ('wide', 'extrapretty', 'grp-collapse grp-open',),
         }),
         ('Otros', {
-            'fields': [('cancelado', 'cancelado_por'), 'plano_ruta'],
-            'classes': ('extrapretty', 'grp-collapse grp-open',),
+            'fields': [('cancelado', 'cancelado_por'), 'plano_ruta', 'plano'],
+            'classes': ('wide', 'extrapretty', 'grp-collapse grp-open',),
         }),
     ]
+    readonly_fields = ('created', 'modified')
     inlines = [
         ExpedienteLugarInline,
         ExpedienteObjetoInline,
@@ -450,27 +470,30 @@ class ExpedienteAdmin(NestedModelAdmin):
         AntecedenteInline]
     list_display = (
         'id',
+        'fecha_medicion',
         'fecha_plano',
         'inscripcion_numero',
         'inscripcion_fecha',
         'duplicado',
-#        'sin_inscripcion',
+        'sin_inscripcion',
         'orden_numero',
         'orden_fecha',
         'cancelado',
         'show_plano_ruta')
         #'plano_ruta')
     list_editable = (
-        'fecha_plano',
-        'inscripcion_numero',
-        'inscripcion_fecha',
-        'duplicado',
-        'orden_numero',
-        'orden_fecha',
+        'fecha_medicion',
+#        'fecha_plano',
+#        'inscripcion_numero',
+#        'inscripcion_fecha',
+#        'duplicado',
+#        'orden_numero',
+#        'orden_fecha',
 #        'sin_inscripcion',
-        'cancelado')
-        #'plano_ruta')
-    list_filter = [InscriptoFilter, 'duplicado', #'sin_inscripcion',
+#        'cancelado',
+#        'plano_ruta'
+    )
+    list_filter = [InscriptoFilter, 'duplicado', 'sin_inscripcion',
                    TieneOrdenFilter, TieneOrdenPendienteFilter, 'cancelado',
                    'cancelado_por', TienePlanoFilter,
                    'expedientelugar__lugar__nombre',
@@ -542,7 +565,7 @@ admin.site.register(ExpedienteLugar, ExpedienteLugarAdmin)
 
 class ExpedientePartidaAdmin(admin.ModelAdmin):
     inlines = [CatastroInline]
-    list_display = ('expediente', 'partida', 'show_set_ruta')
+    list_display = ('expediente', 'partida', 'show_set_ruta', 'informe_catastral')
     #list_editable = ('set_ruta',)
     list_filter = [TieneSetFilter,]
     search_fields = ['expediente__id', 'partida__pii',]

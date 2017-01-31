@@ -86,19 +86,6 @@
     {% endfor %}
     </div>
     <br />
-    <!-- Inmueble -->
-    <div>INMUEBLE: <strong>{{ inmueble }}</strong></div>
-    <br />
-    <!-- Dominio -->
-    <div>DOMINIO:
-      <strong>
-      Tº: {{ tomo|default:"_____" }} {% if par %}Par{% else %}Impar{% endif %} -
-      Fº: {{ folio|default:"_____" }} -
-      Nº: {{ numero|default:"_____" }} -
-      {{ fecha_dominio|default:"___/___/_____" }}
-      </strong>
-    </div>
-    <br />
     <!-- Propietarios -->
     <div>PROPIETARIO:
     {% for ep in e.expedientepersona_set.all %}
@@ -110,6 +97,19 @@
       {% if ep.partes_indivisas_propias %}<small>({{ ep.partes_indivisas_propias }}/{{ ep.partes_indivisas_total }} partes indivisas)</small>{% endif %}
       {% endif %}
     {% endfor %}
+    </div>
+    <br />
+    <!-- Inmueble -->
+    <div>INMUEBLE: <strong>{{ inmueble }}</strong></div>
+    <br />
+    <!-- Dominio -->
+    <div>DOMINIO:
+      <strong>
+      Tº: {{ tomo|default:"_____" }} {% if par %}Par{% else %}Impar{% endif %} -
+      Fº: {{ folio|default:"_____" }} -
+      Nº: {{ numero|default:"_____" }} -
+      {{ fecha_dominio|default:"___/___/_____" }}
+      </strong>
     </div>
     <br />
     <!-- Balance -->

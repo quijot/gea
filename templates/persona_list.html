@@ -13,8 +13,8 @@
   <form class="navbar-form navbar-right" action="." method="get">
     <div class="form-group">
       <div class="input-group input-group-sm">
-        <span class="input-group-addon"><i class="fa fa-users"></i></span>
-        <input type="text" id="search" name="search" placeholder="Nombres/Apellidos" class="form-control" value="{{ request.GET.search }}">
+        <span class="input-group-addon"><i class="fa fa-user"></i> <i class="fa fa-folder"></i> <i class="fa fa-thumb-tack"></i></span>
+        <input type="text" id="search" name="search" placeholder="Persona/Expediente/Lugar/PII/Plano" class="form-control" value="{{ request.GET.search }}" size="35">
         <span class="input-group-btn"><button type="submit" class="btn btn-sm btn-success"><i class="fa fa-search"></i></button></span>
       </div>
     </div>

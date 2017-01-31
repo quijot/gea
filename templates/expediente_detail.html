@@ -5,17 +5,38 @@
 {% block nav-exp %} class="active"{% endblock %}
 
 {% block content %}
+{% load static from staticfiles %}
 <div class="col-lg-8">
     <div class="col-md-2 column">
-        <img src="{{ STATIC_URL }}img/globe.png" class="img-square" />
+        <img src="{% static "img/globe.png" %}" class="img-square" />
     </div>
     <div class="col-md-offset-3 column">
-        <h1>{{ object.inscripcion_numero }}</h1>
-        <h4><i class="fa fa-folder"></i><a href="#"> {{ object.id }}</a></h4>
+        <h1><i class="fa fa-folder"></i><a href="#"> {{ object.id }}</a></h1>
+        <!--<h2>{{ object.expedientepersona_set.first.persona.nombre_completo }}</h2>-->
+        <h2>{% if object.expedientepersona_set.count > 1 %}<i class="fa fa-users"></i>{% else %}<i class="fa fa-user"></i>{% endif %}
+      {% if object.expedientepersona_set %}
+        {% for ep in object.expedientepersona_set.all %}
+          {% if ep.propietario %}
+            <a href="/admin/gea/persona/{{ ep.persona.id }}/">
+            {% if ep.sucesion %}Sucesores de {% endif %}
+            {{ ep.persona.nombres }} {{ ep.persona.apellidos }}{% if ep.sucesion %} (*){% endif %}{% if ep.nuda_propiedad %} (* nuda propiedad){% endif %}</a>{% if not forloop.last %}, {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+        </h2>
+        <h3>{{ object.expedientelugar_set.first }}</h3>
     </div>
     </br>
     <table class="table table-user-information">
         <tbody>
+            <tr>
+                <th class="col-md-3 text-right">Alta</th>
+                <td>{{ object.created }}</td>
+            </tr>
+            <tr>
+                <th class="col-md-3 text-right">Lugar</th>
+                <td>{{ object.expedientelugar_set.first }}</td>
+            </tr>
             <tr>
                 <th class="col-md-3 text-right">Fecha</th>
                 <td>{{ object.inscripcion_fecha }}</td>
@@ -23,10 +44,6 @@
             <tr>
                 <th class="col-md-3 text-right">Plano</th>
                 <td><a href="{{ object.plano_ruta }}">{{ object.inscripcion_numero }}</a></td>
-            </tr>
-            <tr>
-                <th class="col-md-3 text-right">Lugar</th>
-                <td>{{ object.expedientelugar_set.first }}</td>
             </tr>
         </tbody>
     </table>

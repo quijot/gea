@@ -7,5 +7,187 @@
         <h1><i class="fa fa-globe"></i> <a href="/">GEA</a></h1>
         <h4><strong>G</strong>estión de <strong>E</strong>xpedientes de <strong>A</strong>grimensores</h4>
       </div>
+      <!-- Status -->
+      <div class="col-md-4">
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <span class="pull-right"><a href="/admin/gea/expediente/?inscripto=si" class="btn btn-primary" title="Ver todos"><i class="fa fa-plus"></i></a></span>
+            <h3 class="panel-title"><i class="fa fa-map"></i> <strong>Planos inscriptos</strong></h3>
+            Últimos {{ insc_list.count }} expedientes inscriptos.
+          </div>
+          <div class="panel-body">
+            <ul class="list-group">
+              {% for e in insc_list %}
+              <li class="list-group-item">
+                <span class="badge">{{ e.inscripcion_fecha }}</span>
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - Plano Nº <a href="ftp://zentyal.estudio.lan/planos/1/{{ e.inscripcion_numero }}.pdf/">{{ e.inscripcion_numero }}</a>
+              </li>
+                {% empty %}
+              <li class="list-group-item active">
+                No hay Expedientes en este Estado.
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-warning">
+          <div class="panel-heading">
+            <span class="pull-right"><a href="/admin/gea/expediente/?cancelado__exact=0&orden_pendiente=si&sin_inscripcion__exact=0" class="btn btn-warning" title="Ver todos"><i class="fa fa-plus"></i></a></span>
+            <h3 class="panel-title"><i class="fa fa-file-text"></i> <strong>Órdenes de trabajo</strong></h3>
+            Últimas {{ insc_list.count }} órdenes de trabajo.
+          </div>
+          <div class="panel-body">
+            <ul class="list-group">
+              {% for e in ord_list %}
+              <li class="list-group-item">
+                <span class="badge">{{ e.orden_fecha }}</span>
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - Expte. CoPA Nº <strong>{{ e.orden_numero }}</strong>
+              </li>
+                {% empty %}
+              <li class="list-group-item active">
+                No hay Expedientes en este Estado.
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-compass"></i> <strong>Relevamientos</strong></h3>
+            Últimos {{ relev_list.count }} relevamientos.
+          </div>
+          <div class="panel-body">
+             <ul class="list-group">
+              {% for e in relev_list %}
+              <li class="list-group-item">
+                <span class="badge">{{ e.fecha_medicion }}</span>
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - Día de relevamiento
+              </li>
+                {% empty %}
+              <li class="list-group-item active">
+                No hay Expedientes en este Estado.
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-building"></i> <strong>Comunas/Municipios</strong></h3>
+          </div>
+          <div class="panel-body">
+            Panel content
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-warning">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-building"></i> <strong>Ministerios</strong></h3>
+          </div>
+          <div class="panel-body">
+            Panel content
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-map-marker"></i> <strong>Georreferenciación</strong></h3>
+          </div>
+          <div class="panel-body">
+            Panel content
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-danger">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-compass"></i> <strong>Relevamientos pendientes</strong></h3>
+          </div>
+          <div class="panel-body">
+            Panel content
+          </div>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+<!--            <form class="navbar-form navbar-right" action="." method="get">
+              <div class="form-group">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-addon"><i class="fa fa-folder"></i> <i class="fa fa-user"></i> <i class="fa fa-thumb-tack"></i></span>
+                  <input type="text" id="search" name="search" placeholder="Expediente/Persona/Lugar/PII" class="form-control" value="{{ request.GET.search }}" size="30">
+                  <span class="input-group-btn"><button type="submit" class="btn btn-sm btn-success"><i class="fa fa-search"></i></button></span>
+                </div>
+              </div>
+            </form>-->
+            <span class="pull-right"><a href="/gea/expedientes/?inscripto=no" class="btn btn-primary"><i class="fa fa-plus fa-lg"></i></a></span>
+            <h3 class="panel-title"><i class="fa fa-folder-open"></i> <strong>Expedientes abiertos</strong></h3>
+            <strong>{{ count }}</strong> expediente{% if count > 1 %}s{% endif %} filtrado{% if count > 1 %}s{% endif %}
+          </div>
+          <div class="panel-body">
+            <table class="table table-bordered table-condensed table-hover">
+              <thead>
+                <tr>
+                  <th>Expediente</th>
+                  <th>Persona(s)</th>
+                  <th>Lugar(es)</th>
+                  <th>Partida(s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in object_list %}
+                <tr>
+                  <td><!-- EXPEDIENTE -->
+                    <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a>
+                    <!--<a href="{% url 'expediente' e.id %}">{{ e.id }}</a>-->
+                  </td>
+                  <td><!-- PERSONAS -->
+                  {% if e.orden_numero and not e.inscripcion_numero %}<span class="label label-warning">ORDEN PENDIENTE</span> N&ordm; {{ e.orden_numero }} - {{ e.orden_fecha }}<br>{% endif %}
+                  {% if e.cancelado %}<span class="label label-danger">CANCELADO</span> {{ e.cancelado_por }}<br>{% endif %}
+                  {% if e.expedientepersona_set %}
+                    {% for ep in e.expedientepersona_set.all %}
+                    <a href="/admin/gea/persona/{{ ep.persona.id }}/">{{ ep.persona.nombre_completo }}</a>
+                      {% if ep.comitente %}<span class="label label-primary">COMITENTE</span>{% endif %}
+                      {% if ep.persona.telefono %}({{ ep.persona.telefono }}){% endif %}
+                      {% if ep.persona.celular %}({{ ep.persona.celular }}){% endif %}
+                      {% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  </td>
+                  <td><!-- LUGARES -->
+                  {% if e.expedientelugar_set %}
+                    {% for el in e.expedientelugar_set.all %}
+                    <a href="/admin/gea/lugar/{{ el.lugar.id }}/">{{ el.lugar.nombre }}</a> {% for cl in el.catastrolocal_set.all %}<br>{{ cl }}{% endfor %}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  </td>
+                  <td><!-- PARTIDAS -->
+                  {% if e.expedientepartida_set %}
+                    {% for ep in e.expedientepartida_set.all %}
+                      {% if ep.set_ruta %}<a href="{{ ep.set_ruta }}">{% endif %}{{ ep.partida.sd }}-{{ ep.partida }}{% if ep.set_ruta %}</a>{% endif %} <a href='http://scit.santa-fe.gov.ar/tramites/consultapartida.php?parti={{ ep.partida.sd }}{{ ep.partida.pii|stringformat:"06d" }}{{ ep.partida.subpii|stringformat:"04d" }}&origen=1' target="_blank"><i class="fa fa-file"></i></a>{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <div class="alert alert-info" role="alert">
+                  <i class="fa fa-info-circle" aria-hidden="true"></i>
+                  <span class="sr-only">Información:</span>
+                  No se encontraron Expedientes.
+                </div>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 {% endblock %}
 {% block footer %}{% endblock %}

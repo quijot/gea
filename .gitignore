@@ -5,8 +5,4 @@ migrations
 local_settings.py
 ToDo
 
-backup/db/*.gz
-backup/files
-backup/files/*
-backup/sql
-backup/db/gea-db*
+backup

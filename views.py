@@ -3,10 +3,9 @@
 from django.shortcuts import render
 
 from django.http import HttpResponse, HttpResponseRedirect
-from django.template import Context, loader
+from django.template import Context, loader, RequestContext
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import get_object_or_404, render_to_response, \
-    RequestContext
+from django.shortcuts import get_object_or_404, render_to_response
 
 from django import forms
 from django.db.models import Q, Count
@@ -17,10 +16,6 @@ from .gea_vars import CP, CP_dict, PROV, CIRC, NOTA, LUGAR, Lugar_dict
 from django.views.generic import TemplateView, ListView, DetailView
 
 ftp_url = 'ftp://zentyal.estudio.lan'
-
-
-class Home(TemplateView):
-    template_name = 'portada.html'
 
 
 class CounterMixin(object):
@@ -34,14 +29,59 @@ class CounterMixin(object):
 class NumeroSearchMixin(object):
 
     def get_queryset(self):
-        queryset = super(NumeroSearchMixin, self).get_queryset()
+        qset = super(NumeroSearchMixin, self).get_queryset()
         q = self.request.GET.get('search')
         if q:
-            return queryset.filter(
-                Q(id__contains=q) |
-                Q(inscripcion_numero__contains=q)
-            )
-        return queryset
+            q = q.split(' ')
+            for w in q:
+                qset = qset.filter(
+                    Q(id__contains=w) |
+                    Q(inscripcion_numero__contains=w) |
+                    Q(expedientepartida__partida__pii__contains=w) |
+                    Q(expedientepersona__persona__nombres__icontains=w) |
+                    Q(expedientepersona__persona__apellidos__icontains=w) |
+                    Q(expedientelugar__lugar__nombre__icontains=w)
+                ).distinct()
+        return qset
+
+
+class ExpedienteAbiertoMixin(object):
+
+    def get_queryset(self):
+        qset = super(ExpedienteAbiertoMixin, self).get_queryset()
+        qset = qset.filter(
+            Q(inscripcion_numero__isnull=True) &
+            Q(cancelado=False) &
+            Q(sin_inscripcion=False)
+        )[:10]
+        return qset
+
+
+class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
+           ListView):
+    template_name = 'portada.html'
+    model = Expediente
+    #paginate_by = 10
+
+    #def get_paginate_by(self, queryset):
+        #"""
+        #Paginate by specified value in querystring, or use default class
+        #property value.
+        #"""
+        #return self.request.GET.get('paginate_by', self.paginate_by)
+        
+    def get_context_data(self, *args, **kwargs):
+        context = super(Home, self).get_context_data(*args, **kwargs)
+        # last 5 inscriptos
+        context['insc_list'] = Expediente.objects.filter(Q(inscripcion_numero__isnull=False) &
+                                                         Q(inscripcion_fecha__isnull=False)).order_by('-inscripcion_fecha', 'inscripcion_numero')[:5]
+        # ordenes pendientes
+        context['ord_list'] = Expediente.objects.filter(Q(orden_numero__isnull=False) &
+                                                        Q(inscripcion_numero__isnull=True) &
+                                                        Q(orden_fecha__isnull=False)).order_by('-orden_fecha', 'orden_numero')[:5]
+        # relevamientos
+        context['relev_list'] = Expediente.objects.filter(fecha_medicion__isnull=False).order_by('-fecha_medicion')[:5]
+        return context 
 
 
 class ExpedienteMixin(object):
@@ -64,13 +104,13 @@ class ExpedienteMixin(object):
         if q:  # duplicado
             qset = qset.filter(duplicado=q)
         q = self.request.GET.get('sin_inscr')
-        if q:  # duplicado
+        if q:  # sin inscripcion
             qset = qset.filter(sin_inscripcion=q)
         return qset
 
 
-class ExpedienteList(CounterMixin, NumeroSearchMixin,
-  ExpedienteMixin, ListView):
+class ExpedienteList(CounterMixin, NumeroSearchMixin, ExpedienteMixin,
+                     ListView):
     template_name = 'expediente_list.html'
     model = Expediente
     paginate_by = 10
@@ -91,18 +131,22 @@ class ExpedienteDetail(DetailView):
 class NombreSearchMixin(object):
 
     def get_queryset(self):
-        queryset = super(NombreSearchMixin, self).get_queryset()
+        qset = super(NombreSearchMixin, self).get_queryset()
         q = self.request.GET.get('search')
         if q:
             q = q.split(' ')
             for w in q:
-                queryset = queryset.filter(
+                qset = qset.filter(
                     Q(nombres__icontains=w) |
                     Q(apellidos__icontains=w) |
                     Q(nombres_alternativos__icontains=w) |
-                    Q(apellidos_alternativos__icontains=w)
-                )
-        return queryset
+                    Q(apellidos_alternativos__icontains=w) |
+                    Q(expedientepersona__expediente__id__contains=w) |
+                    Q(expedientepersona__expediente__inscripcion_numero__contains=w) |
+                    Q(expedientepersona__expediente__expedientepartida__partida__pii__contains=w) |
+                    Q(expedientepersona__expediente__expedientelugar__lugar__nombre__icontains=w)
+                ).distinct()
+        return qset
 
 
 class PersonaList(CounterMixin, NombreSearchMixin, ListView):
@@ -547,6 +591,31 @@ class DVAPIForm(forms.Form):
     partida = forms.IntegerField(min_value=1, max_value=999999)
     sub_pii = forms.IntegerField(min_value=0, max_value=9999, initial=0)
 
+
+def sie(request):
+    if request.method == 'POST':  # If the form has been submitted...
+        form = SIEForm(request.POST)  # A form bound to the POST data
+        if form.is_valid():  # All validation rules pass
+            mesa = form.cleaned_data['mesa']
+            nro = form.cleaned_data['nro']
+            dv = form.cleaned_data['digito']
+            #dv = get_dvsie(mesa, nro)
+            return HttpResponseRedirect(
+                'https://www.santafe.gov.ar/index.php/apps/sie?mesa=%d&numero=%d&digito=%d' % (mesa, nro, dv))
+    else:
+        form = SIEForm()  # An unbound form
+
+    return render(request, 'sie_form.html', {
+        'form': form,
+    })
+
+
+class SIEForm(forms.Form):
+    mesa = forms.IntegerField(min_value=13401, max_value=13401, initial=13401)
+    nro = forms.IntegerField(min_value=1, max_value=9999999)
+    digito = forms.IntegerField(min_value=0, max_value=9, initial=0)
+
+
 #
 #
 # Presupuestos
@@ -654,3 +723,61 @@ def catastro(request):
     return render(request, 'catastro_form.html', {
         'form': form,
     })
+
+
+######
+from calendar import HTMLCalendar
+from datetime import date
+from itertools import groupby
+
+from django.utils.html import conditional_escape as esc
+
+class QuerysetCalendar(HTMLCalendar):
+
+    def __init__(self, queryset, datefield):
+        self.datefield = datefield
+        super(QuerysetCalendar, self).__init__()
+        self.queryset_by_date = self.group_by_day(queryset)
+
+    def formatday(self, day, weekday):
+        if day != 0:
+            cssclass = self.cssclasses[weekday]
+            if date.today() == date(self.year, self.month, day):
+                cssclass += ' today'
+            if day in self.queryset_by_date:
+                cssclass += ' filled'
+                body = ['<ul>']
+                for item in self.queryset_by_date[day]:
+                    body.append('<li>')
+                    body.append('<a href="%s">' % item.get_absolute_url())
+                    body.append(esc(item))
+                    body.append('</a></li>')
+                body.append('</ul>')
+                return self.day_cell(cssclass, '%d %s' % (day, ''.join(body)))
+            return self.day_cell(cssclass, day)
+        return self.day_cell('noday', ' ')
+
+
+    def formatmonth(self, year, month):
+        self.year, self.month = year, month
+        return super(QuerysetCalendar, self).formatmonth(year, month)
+
+    def group_by_day(self, queryset):
+        field = lambda item: getattr(item, self.datefield).day
+        return dict(
+            [(day, list(items)) for day, items in groupby(queryset, field)]
+        )
+
+    def day_cell(self, cssclass, body):
+        return '<td class="%s">%s</td>' % (cssclass, body)
+
+#######
+
+from django.utils.safestring import mark_safe
+
+def calendar(request, year, month):
+    e = Expediente.objects.order_by('fecha_medicion').filter(
+        fecha_medicion__year=year, fecha_medicion__month=month
+        )
+    cal = QuerysetCalendar(e, 'fecha_medicion').formatmonth(int(year), int(month))
+    return render_to_response('calendar.html', {'calendar': mark_safe(cal),})
