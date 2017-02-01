@@ -613,6 +613,7 @@ class PartidaAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields': [('sd', 'pii', 'subpii', 'api')]}),
     ]
+    readonly_fields = ('api')
     inlines = [PartidaDominioInline]
     #list_display = ('id', 'sd', 'pii', 'subpii', 'api')
     list_filter = ['sd__ds__dp__nombre']

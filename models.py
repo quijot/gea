@@ -277,6 +277,7 @@ class Sd(models.Model):
 
     def __str__(self):
         return u'%s%s%02d' % (self.ds.dp, self.ds, self.sd)
+    nomenclatura = property(__str__)
 
 
 #class Expediente(models.Model):
@@ -459,12 +460,31 @@ class Partida(models.Model):
     def pii_completa(self):
         return u'%s-%06d/%04d-%d' % (self.sd, self.pii, self.subpii, self.api)
 
+    def calc_dvapi(self, sd, pii, subpii=0):
+        coef = '9731'
+        _coef = coef + coef + coef + coef
+        strpii = '%06d%06d%04d' % (sd, pii, subpii)
+        suma = 0
+        for i in range(0, len(strpii)):
+            m = str(int(strpii[i]) * int(_coef[i]))
+            suma += int(m[len(m) - 1])
+        return (10 - (suma % 10)) % 10
+
+    def get_dvapi(self):
+        return self.calc_dvapi(int(self.sd.nomenclatura), self.pii, self.subpii)
+    dvapi = property(get_dvapi)
+
     class Meta:
         unique_together = (('pii', 'subpii'))
         ordering = ['pii', 'subpii']
 
     def __str__(self):
         return u'%06d/%04d-%d' % (self.pii, self.subpii, self.api)
+
+    def save(self, force_insert=False, force_update=False):
+        self.subpii = self.subpii if self.subpii else 0
+        self.api = self.get_dvapi()
+        super(Partida, self).save(force_insert, force_update)
 
 
 class PartidaDominio(models.Model):
