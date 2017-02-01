@@ -7,11 +7,11 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 ## Requisitos previos
 
 - GNU/Linux
-- Python 2.7.6 (No funciona directamente con Python 3, hay que cambiar por lo menos ```__unicode__``` por ```__str__``` en models.py.)
-- [Django](https://pypi.python.org/pypi/Django/) 1.9.6
+- Python 3.6
+- [Django](https://pypi.python.org/pypi/Django/) 1.8.9
 - [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1 (opcional si utiliza PostgreSQL)
 - [Grappelli](http://grappelliproject.com/) 2.8.1 (opcional)
-- [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 3.0.2 (para formularios anidados)
+- [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 2.1.8 (para formularios anidados)
 
 ## Instalación
 
@@ -139,16 +139,6 @@ $ python manage.py runserver
 ```
 
 e ingresamos a [http://127.0.0.1:8000/](http://127.0.0.1:8000/)... con los datos del superusuario que creamos antes.
-
-### Opcional sólo con PostgreSQL: Volcar datos de la provincia de Santa Fe
-
-Ejecutar el script que completa datos referidos a Circunscripciones, Departamentos, Distritos, Subdistritos y Zonas más algunos datos de ejemplo y crea funciones y triggers para calcular automáticamente el dígito verificador de las Partidas de Impuesto Inmobiliario:
-
-```bash
-$ # dentro de "estudio"
-$ chmod +x gea/backup/db/basics-db.sh
-$ ./gea/backup/db/basics-db.sh
-```
 
 ## LICENCIA
 
