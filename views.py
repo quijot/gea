@@ -6,6 +6,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import Context, loader, RequestContext
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, render_to_response
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 from django import forms
 from django.db.models import Q, Count
@@ -83,6 +85,10 @@ class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
         context['relev_list'] = Expediente.objects.filter(fecha_medicion__isnull=False).order_by('-fecha_medicion')[:5]
         return context 
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(Home, self).dispatch(*args, **kwargs)
+
 
 class ExpedienteMixin(object):
 
@@ -122,10 +128,18 @@ class ExpedienteList(CounterMixin, NumeroSearchMixin, ExpedienteMixin,
         """
         return self.request.GET.get('paginate_by', self.paginate_by)
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ExpedienteList, self).dispatch(*args, **kwargs)
+
 
 class ExpedienteDetail(DetailView):
     template_name = 'expediente_detail.html'
     model = Expediente
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ExpedienteDetail, self).dispatch(*args, **kwargs)
 
 
 class NombreSearchMixin(object):
@@ -154,12 +168,21 @@ class PersonaList(CounterMixin, NombreSearchMixin, ListView):
     model = Persona
     paginate_by = 50
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(PersonaList, self).dispatch(*args, **kwargs)
+
 
 class PersonaDetail(DetailView):
     template_name = 'persona_detail.html'
     model = Persona
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(PersonaDetail, self).dispatch(*args, **kwargs)
 
+
+@login_required
 def listado_alfabetico(request, inicial=None):
     # datasets
     pers_list = Persona.objects.all().order_by('apellidos', 'nombres')
@@ -275,6 +298,10 @@ class CatastroLocalList(CounterMixin, CLMixin, ListView):
           'parcela', flat=True).distinct().order_by('parcela')
         return context
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(CatastroLocalList, self).dispatch(*args, **kwargs)
+
 
 def catastros_locales(request):
     return parcelas(request)
@@ -375,6 +402,7 @@ class CaratulaForm(forms.Form):
         }), required=False)
 
 
+@login_required
 def caratula(request):
     if request.method == 'POST':  # If the form has been submitted...
         # CaratulaForm was defined in the previous section
@@ -427,6 +455,7 @@ class SolicitudForm(forms.Form):
         }), required=False)
 
 
+@login_required
 def solicitud(request):
     if request.method == 'POST':  # If the form has been submitted...
         # SolicitudForm was defined in the previous section
@@ -471,6 +500,7 @@ class VisacionForm(forms.Form):
     lugar = forms.ChoiceField(choices=LUGAR, initial=0)
 
 
+@login_required
 def visacion(request):
     if request.method == 'POST':  # If the form has been submitted...
         # VisacionForm was defined in the previous section
