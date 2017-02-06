@@ -10,8 +10,9 @@ __gea__ es una aplicación web basada en [Django](https://www.djangoproject.com/
 - Python 3.6
 - [Django](https://pypi.python.org/pypi/Django/) 1.8.9
 - [psycopg2](https://pypi.python.org/pypi/psycopg2/) 2.6.1 (opcional si utiliza PostgreSQL)
-- [Grappelli](http://grappelliproject.com/) 2.8.1 (opcional)
+- [Grappelli](http://grappelliproject.com/) 2.7.3
 - [django-nested-admin](https://pypi.python.org/pypi/django-nested-admin/) 2.1.8 (para formularios anidados)
+- [FileBrower](http://github.com/sehmaschine/django-filebrowser) 3.6.4 (para manejo de archivos)
 
 ## Instalación
 
