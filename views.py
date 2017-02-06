@@ -1,23 +1,19 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
 from django.shortcuts import render
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import Context, loader, RequestContext
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, render_to_response
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from django import forms
-from django.db.models import Q, Count
+from django.db.models import Count, Q
 
 from .models import Expediente, Persona, Objeto, Lugar, Partida, CatastroLocal
-from .gea_vars import CP, CP_dict, PROV, CIRC, NOTA, LUGAR, Lugar_dict
+from .gea_vars import CP, CP_DEFAULT, CP_dict, PROV, PROV_DEFAULT, CIRC, \
+CIRC_DEFAULT, NOTA, LUGAR, Lugar_dict
 
 from django.views.generic import TemplateView, ListView, DetailView
-
-ftp_url = 'ftp://zentyal.estudio.lan'
 
 
 class CounterMixin(object):
@@ -61,16 +57,8 @@ class ExpedienteAbiertoMixin(object):
 
 class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
            ListView):
-    template_name = 'portada.html'
+    template_name = 'home/index.html'
     model = Expediente
-    #paginate_by = 10
-
-    #def get_paginate_by(self, queryset):
-        #"""
-        #Paginate by specified value in querystring, or use default class
-        #property value.
-        #"""
-        #return self.request.GET.get('paginate_by', self.paginate_by)
         
     def get_context_data(self, *args, **kwargs):
         context = super(Home, self).get_context_data(*args, **kwargs)
@@ -88,6 +76,10 @@ class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(Home, self).dispatch(*args, **kwargs)
+
+
+class About(TemplateView):
+    template_name = 'home/about.html'
 
 
 class ExpedienteMixin(object):
@@ -117,7 +109,7 @@ class ExpedienteMixin(object):
 
 class ExpedienteList(CounterMixin, NumeroSearchMixin, ExpedienteMixin,
                      ListView):
-    template_name = 'expediente_list.html'
+    template_name = 'lists/expediente_list.html'
     model = Expediente
     paginate_by = 10
 
@@ -134,7 +126,7 @@ class ExpedienteList(CounterMixin, NumeroSearchMixin, ExpedienteMixin,
 
 
 class ExpedienteDetail(DetailView):
-    template_name = 'expediente_detail.html'
+    template_name = 'lists/expediente_detail.html'
     model = Expediente
 
     @method_decorator(login_required)
@@ -164,7 +156,7 @@ class NombreSearchMixin(object):
 
 
 class PersonaList(CounterMixin, NombreSearchMixin, ListView):
-    template_name = 'persona_list.html'
+    template_name = 'lists/persona_list.html'
     model = Persona
     paginate_by = 50
 
@@ -174,38 +166,12 @@ class PersonaList(CounterMixin, NombreSearchMixin, ListView):
 
 
 class PersonaDetail(DetailView):
-    template_name = 'persona_detail.html'
+    template_name = 'lists/persona_detail.html'
     model = Persona
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(PersonaDetail, self).dispatch(*args, **kwargs)
-
-
-@login_required
-def listado_alfabetico(request, inicial=None):
-    # datasets
-    pers_list = Persona.objects.all().order_by('apellidos', 'nombres')
-    # filtering
-    if inicial is not None:
-        pers_list = pers_list.filter(apellidos__istartswith=inicial)
-    # pagination
-    paginator = Paginator(pers_list, 50)
-    page = request.GET.get('page')
-    try:
-        personas = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        personas = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        personas = paginator.page(paginator.num_pages)
-    template = loader.get_template('listado_alfabetico.html')
-    context = Context({
-        'cl': personas,
-        'inicial': inicial,
-    })
-    return HttpResponse(template.render(context))
 
 
 class LugarSearchMixin(object):
@@ -267,10 +233,8 @@ class CLMixin(object):
         return qset
 
 
-#class CatastroLocalList(CounterMixin, LugarSearchMixin, SeccionSearchMixin,
-#  ManzanaSearchMixin, ParcelaSearchMixin, ListView):
 class CatastroLocalList(CounterMixin, CLMixin, ListView):
-    template_name = 'catastros_locales.html'
+    template_name = 'lists/catastros_locales.html'
     model = Expediente
     paginate_by = 10
 
@@ -303,91 +267,8 @@ class CatastroLocalList(CounterMixin, CLMixin, ListView):
         return super(CatastroLocalList, self).dispatch(*args, **kwargs)
 
 
-def catastros_locales(request):
-    return parcelas(request)
-
-
-def lugares(request, l):
-    return parcelas(request, l)
-
-
-def secciones(request, l, s):
-    return parcelas(request, l, s)
-
-
-def manzanas(request, l, s, m):
-    return parcelas(request, l, s, m)
-
-
-def parcelas(request, l=None, s='all', m='all', p='all'):
-    # datasets
-    lugares = Lugar.objects.values_list('nombre', flat=True).filter(
-        Q(expedientelugar__catastrolocal__seccion__isnull=False) |
-        Q(expedientelugar__catastrolocal__manzana__isnull=False) |
-        Q(expedientelugar__catastrolocal__parcela__isnull=False)
-        ).distinct().order_by('nombre')
-    exp_list = Expediente.objects.all().distinct().order_by(
-        'expedientelugar__catastrolocal__seccion',
-        'expedientelugar__catastrolocal__manzana',
-        'expedientelugar__catastrolocal__parcela')
-    secciones = CatastroLocal.objects.all()
-    manzanas = CatastroLocal.objects.all()
-    parcelas = CatastroLocal.objects.all()
-    # filtering
-    exp_list = exp_list.filter(expedientelugar__lugar__nombre=l)
-    secciones = secciones.filter(expediente_lugar__lugar__nombre=l)
-    manzanas = manzanas.filter(expediente_lugar__lugar__nombre=l)
-    parcelas = parcelas.filter(expediente_lugar__lugar__nombre=l)
-    if s is 'None':
-        s = None
-    if s != 'all':
-        exp_list = exp_list.filter(expedientelugar__catastrolocal__seccion=s)
-        manzanas = manzanas.filter(seccion=s)
-        parcelas = parcelas.filter(seccion=s)
-    if m is 'None':
-        m = None
-    if m != 'all':
-        exp_list = exp_list.filter(expedientelugar__catastrolocal__manzana=m)
-        parcelas = parcelas.filter(manzana=m)
-    if p is 'None':
-        p = None
-    if p != 'all':
-        exp_list = exp_list.filter(expedientelugar__catastrolocal__parcela=p)
-    # ordering
-    secciones = secciones.values_list(
-        'seccion', flat=True).distinct().order_by('seccion')
-    manzanas = manzanas.values_list(
-        'manzana', flat=True).distinct().order_by('manzana')
-    parcelas = parcelas.values_list(
-        'parcela', flat=True).distinct().order_by('parcela')
-    # pagination
-    paginator = Paginator(exp_list, 10)
-    page = request.GET.get('page')
-    try:
-        expedientes = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        expedientes = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        expedientes = paginator.page(paginator.num_pages)
-    template = loader.get_template('listado_catastros_locales.html')
-    context = Context({
-        'cl': expedientes,
-        'lugares': lugares,
-        'secciones': secciones,
-        'manzanas': manzanas,
-        'parcelas': parcelas,
-        'lugar': l,
-        'seccion': s,
-        'manzana': m,
-        'parcela': p,
-    })
-    return HttpResponse(template.render(context))
-
-
 class CaratulaForm(forms.Form):
-    expte_nro = forms.IntegerField(
+    expte_nro = forms.IntegerField(label='Expediente Nº',
         widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
     inmueble = forms.CharField(widget=forms.Textarea(attrs={
         'placeholder': 'ej: Una fracción de terreno...'
@@ -395,9 +276,10 @@ class CaratulaForm(forms.Form):
     tomo = forms.IntegerField(required=False)
     par = forms.BooleanField(required=False)
     folio = forms.IntegerField(required=False)
-    numero = forms.IntegerField(required=False)
+    numero = forms.IntegerField(label='Número', required=False)
     fecha = forms.DateField(required=False)
-    obs = forms.CharField(widget=forms.Textarea(attrs={
+    obs = forms.CharField(label='Observaciones',
+        widget=forms.Textarea(attrs={
         'placeholder': 'ej: Modifica el Lote Nº 1 del Plano Nº 23.456. Etc.'
         }), required=False)
 
@@ -420,7 +302,7 @@ def caratula(request):
             obs = form.cleaned_data['obs']
 
             e = get_object_or_404(Expediente, id=expediente_id)
-            template = loader.get_template('caratula.html')
+            template = loader.get_template('tools/caratula.html')
             context = Context({
                 'e': e,
                 'inmueble': inmueble,
@@ -435,22 +317,22 @@ def caratula(request):
     else:
         form = CaratulaForm()  # An unbound form
 
-    return render(request, 'caratula_form.html', {
+    return render(request, 'tools/caratula_form.html', {
         'form': form,
     })
 
 
 class SolicitudForm(forms.Form):
-    expte_nro = forms.IntegerField(
+    expte_nro = forms.IntegerField(label='Expediente Nº',
         widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
-    circunscripcion = forms.ChoiceField(choices=CIRC, initial=u'SANTA FE')
+    circunscripcion = forms.ChoiceField(label='Circunscripción', choices=CIRC, initial=CIRC_DEFAULT)
     domicilio_fiscal = forms.CharField(max_length=40, widget=forms.TextInput(
         attrs={'placeholder': 'ej: San Martín 430'}))
-    localidad = forms.ChoiceField(choices=CP, initial=u'GÁLVEZ')
-    provincia = forms.ChoiceField(choices=PROV, initial=u'SANTA FE')
-    nota_titulo = forms.ChoiceField(
-        choices=NOTA, initial=u'DECLARATORIA DE HEREDEROS')
-    nota = forms.CharField(widget=forms.Textarea(attrs={
+    localidad = forms.ChoiceField(choices=CP, initial=CP_DEFAULT)
+    provincia = forms.ChoiceField(choices=PROV, initial=PROV_DEFAULT)
+    nota_titulo = forms.ChoiceField(label='Nota título', choices=NOTA)
+    nota = forms.CharField(label='Nota contenido',
+        widget=forms.Textarea(attrs={
         'placeholder': 'Ingrese el texto de la nota correspondiente'
         }), required=False)
 
@@ -475,7 +357,7 @@ def solicitud(request):
             nota = form.cleaned_data['nota']
 
             e = get_object_or_404(Expediente, id=expediente_id)
-            template = loader.get_template('solic.html')
+            template = loader.get_template('doc/solic.html')
             context = Context({
                 'e': e,
                 'domfiscal': domicilio_fiscal,
@@ -490,13 +372,13 @@ def solicitud(request):
     else:
         form = SolicitudForm()  # An unbound form
 
-    return render(request, 'solic_form.html', {
+    return render(request, 'doc/solic_form.html', {
         'form': form,
     })
 
 
 class VisacionForm(forms.Form):
-    expte_nro = forms.IntegerField()
+    expte_nro = forms.IntegerField(label='Expediente Nº')
     lugar = forms.ChoiceField(choices=LUGAR, initial=0)
 
 
@@ -515,7 +397,7 @@ def visacion(request):
 
             e = get_object_or_404(Expediente, id=eid)
             # Redirect after POST
-            return render_to_response('visac.html', {
+            return render_to_response('doc/visac.html', {
                 "e": e,
                 "sr": sr,
                 "localidad": localidad
@@ -523,7 +405,7 @@ def visacion(request):
     else:
         form = VisacionForm()  # An unbound form
 
-    return render(request, 'visac_form.html', {
+    return render(request, 'doc/visac_form.html', {
         'form': form,
     })
 
@@ -531,36 +413,40 @@ def visacion(request):
 #
 # Buscar Plano por Nro
 #
+ftp_url = 'ftp://zentyal.estudio.lan'
+
+
 class PlanoForm(forms.Form):
-    circunscripcion = forms.IntegerField(min_value=1, max_value=2, initial=1)
-    nro_inscripcion = forms.IntegerField(min_value=1, max_value=999999)
+    circ = forms.IntegerField(label='Circunscripción', min_value=1, max_value=2, initial=1)
+    n_insc = forms.IntegerField(label='Plano Nº', min_value=1, max_value=999999)
 
 
+@login_required
 def plano(request):
     if request.method == 'POST':  # If the form has been submitted...
         form = PlanoForm(request.POST)  # A form bound to the POST data
         if form.is_valid():  # All validation rules pass
-            circ = form.cleaned_data['circunscripcion']
-            nro = form.cleaned_data['nro_inscripcion']
+            circ = form.cleaned_data['circ']
+            nro = form.cleaned_data['n_insc']
             return HttpResponseRedirect(
                 '%s/planos/%s/%06d.pdf' % (ftp_url, circ, nro))
     else:
         form = PlanoForm()  # An unbound form
 
-    return render(request, 'plano_form.html', {
+    return render(request, 'search/plano_form.html', {
         'form': form,
     })
+
 
 #
 # Buscar Set de Datos por PII
 #
-
-
 class SetForm(forms.Form):
     partida = forms.IntegerField(min_value=1, max_value=999999)
-    sub_pii = forms.IntegerField(min_value=0, max_value=9999, initial=0)
+    sub_pii = forms.IntegerField(label='Subpartida', min_value=0, max_value=9999, initial=0)
 
 
+@login_required
 def set(request):
     if request.method == 'POST':  # If the form has been submitted...
         form = SetForm(request.POST)  # A form bound to the POST data
@@ -572,13 +458,20 @@ def set(request):
     else:
         form = SetForm()  # An unbound form
 
-    return render(request, 'set_form.html', {
+    return render(request, 'search/set_form.html', {
         'form': form,
     })
+
 
 #
 # Calcular Digito Verificador de la PII
 #
+class DVAPIForm(forms.Form):
+    dp = forms.IntegerField(label='DP (departamento)', min_value=1, max_value=19, initial=11)
+    ds = forms.IntegerField(label='DS (distrito)', min_value=1, max_value=99, initial=8)
+    sd = forms.IntegerField(label='SD (subdistrito)', min_value=0, max_value=99, initial=0)
+    partida = forms.IntegerField(min_value=1, max_value=999999)
+    sub_pii = forms.IntegerField(label='Subpartida', min_value=0, max_value=9999, initial=0)
 
 
 def get_dvapi(dp, ds, sd, pii, subpii):
@@ -602,24 +495,25 @@ def dvapi(request):
             pii = form.cleaned_data['partida']
             sub_pii = form.cleaned_data['sub_pii']
             dv = get_dvapi(dp, ds, sd, pii, sub_pii)
-            return render_to_response('dvapi_form.html', {
+            return render_to_response('tools/dvapi_form.html', {
                 'dv': dv,
                 'form': form
             }, context_instance=RequestContext(request))
     else:
         form = DVAPIForm()  # An unbound form
 
-    return render(request, 'dvapi_form.html', {
+    return render(request, 'tools/dvapi_form.html', {
         'form': form,
     })
 
 
-class DVAPIForm(forms.Form):
-    dp = forms.IntegerField(min_value=1, max_value=19, initial=11)
-    ds = forms.IntegerField(min_value=1, max_value=99, initial=8)
-    sd = forms.IntegerField(min_value=0, max_value=99, initial=0)
-    partida = forms.IntegerField(min_value=1, max_value=999999)
-    sub_pii = forms.IntegerField(min_value=0, max_value=9999, initial=0)
+#
+# Consultar estado en Sistema de Información de Expedientes del SCIT
+#
+class SIEForm(forms.Form):
+    mesa = forms.IntegerField(min_value=13401, max_value=13401, initial=13401)
+    nro = forms.IntegerField(label='Número', min_value=1, max_value=9999999)
+    digito = forms.IntegerField(label='Dígito', min_value=0, max_value=9, initial=0)
 
 
 def sie(request):
@@ -635,82 +529,27 @@ def sie(request):
     else:
         form = SIEForm()  # An unbound form
 
-    return render(request, 'sie_form.html', {
+    return render(request, 'tools/sie_form.html', {
         'form': form,
     })
 
-
-class SIEForm(forms.Form):
-    mesa = forms.IntegerField(min_value=13401, max_value=13401, initial=13401)
-    nro = forms.IntegerField(min_value=1, max_value=9999999)
-    digito = forms.IntegerField(min_value=0, max_value=9, initial=0)
-
-
-#
-#
-# Presupuestos
-#
-#
-
-
-def presup(request, persona=None, objeto=None):
-    # p = get_object_or_404(Persona, =eid)
-    return render_to_response('presup.html', {
-        "persona": persona,
-        "objeto": objeto
-    }, context_instance=RequestContext(request))
-
-
-class PresupForm(forms.Form):
-    persona = forms.ModelChoiceField(
-        queryset=Persona.objects.all(), empty_label=None)
-    objeto = forms.ModelChoiceField(
-        queryset=Objeto.objects.all(), empty_label=None)
-    lugar = forms.ModelChoiceField(queryset=Lugar.objects.all())
-    partida = forms.ModelChoiceField(queryset=Partida.objects.all())
-    monto = forms.FloatField(required=False)
-
-
-def presup_form(request):
-    if request.method == 'POST':  # If the form has been submitted...
-            # VisacionForm was defined in the previous section
-        form = PresupForm(request.POST)  # A form bound to the POST data
-        if form.is_valid():  # All validation rules pass
-            # Process the data in form.cleaned_data
-            # ...
-            persona = form.cleaned_data['persona']
-            objeto = form.cleaned_data['objeto']
-            # lugar = form.cleaned_data['lugar']
-            # partida = form.cleaned_data['partida']
-            # monto = form.cleaned_data['monto']
-
-            # Redirect after POST
-            return HttpResponseRedirect(
-                '/gea/presup/%s/%s' % (persona, objeto))
-    else:
-        form = PresupForm()  # An unbound form
-
-    return render(request, 'presup_form.html', {
-        'form': form,
-    })
 
 #
 #
 # Exptes x Catastro Local
 #
 #
-
-
 class CLForm(forms.Form):
     lugar = forms.ModelChoiceField(queryset=Lugar.objects.exclude(
-        nombre__startswith='Colonia').exclude(
-            nombre__startswith='Zona Rural').exclude(
+                nombre__startswith='Colonia').exclude(
+                nombre__startswith='Zona Rural').exclude(
                 nombre__startswith='Zona de Islas'), required=False)
     seccion = forms.CharField(max_length=4, required=False)
     manzana = forms.CharField(max_length=4, required=False)
     parcela = forms.CharField(max_length=4, required=False)
 
 
+@login_required
 def catastro(request):
     if request.method == 'POST':  # If the form has been submitted...
         # VisacionForm was defined in the previous section
@@ -750,11 +589,13 @@ def catastro(request):
     else:
         form = CLForm()  # An unbound form
 
-    return render(request, 'catastro_form.html', {
+    return render(request, 'tools/catastro_form.html', {
         'form': form,
     })
 
 
+######
+###### EXPERIMENTAL
 ######
 from calendar import HTMLCalendar
 from datetime import date
@@ -810,4 +651,4 @@ def calendar(request, year, month):
         fecha_medicion__year=year, fecha_medicion__month=month
         )
     cal = QuerysetCalendar(e, 'fecha_medicion').formatmonth(int(year), int(month))
-    return render_to_response('calendar.html', {'calendar': mark_safe(cal),})
+    return render_to_response('tools/calendar.html', {'calendar': mark_safe(cal),})

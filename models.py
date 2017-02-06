@@ -1,12 +1,9 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import models
 from django_extensions.db.models import (
     TitleSlugDescriptionModel, TimeStampedModel)
 #from django.urls import reverse
 from django.core.urlresolvers import reverse
+from filebrowser.fields import FileBrowseField
 
 
 def CapitalizePhrase(string):
@@ -19,7 +16,6 @@ def CapitalizePhrase(string):
 class CharNullField(models.CharField):  # subclass the CharField
     description = "CharField that stores NULL but returns ''"
     # this ensures to_python will be called
-#    __metaclass__ = models.SubfieldBase
 
     def from_db_value(self, value, expression, connection, context):
         if value is None:
@@ -48,7 +44,6 @@ class CharNullField(models.CharField):  # subclass the CharField
 class URLNullField(models.URLField):  # subclass the URLField
     description = "URLField that stores NULL but returns ''"
     # this ensures to_python will be called
-#    __metaclass__ = models.SubfieldBase
 
     def from_db_value(self, value, expression, connection, context):
         if value is None:
@@ -77,7 +72,6 @@ class URLNullField(models.URLField):  # subclass the URLField
 class EmailNullField(models.EmailField):  # subclass the EmailField
     description = "EmailField that stores NULL but returns ''"
     # this ensures to_python will be called
-#    __metaclass__ = models.SubfieldBase
 
     def from_db_value(self, value, expression, connection, context):
         if value is None:
@@ -113,9 +107,10 @@ class Antecedente(models.Model):
     inscripcion_numero = models.IntegerField(
         null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
+    plano = FileBrowseField("Enlace al plano", max_length=200, directory="planos/", extensions=[".pdf"], blank=True, null=True)
 
 
 class Catastro(models.Model):
@@ -188,7 +183,7 @@ class Presupuesto(models.Model):
     fecha = models.DateField()
     porcentaje_cancelado = models.DecimalField(
         max_digits=5, decimal_places=2, verbose_name='% cancelado')
-    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
 
     class Meta:
         ordering = ['expediente']
@@ -206,7 +201,7 @@ class Pago(models.Model):
     fecha = models.DateField(null=True, blank=True, default=None)
     monto = models.DecimalField(max_digits=8, decimal_places=2)
     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
-    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
 
     def __str__(self):
         return u'%s%% - %s' % (str(self.porcentaje), str(self.fecha))
@@ -280,15 +275,10 @@ class Sd(models.Model):
     nomenclatura = property(__str__)
 
 
-#class Expediente(models.Model):
 class Expediente(TimeStampedModel):
-#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.IntegerField('Expediente Nº', primary_key=True)
     fecha_plano = models.DateField(null=True, blank=True, default=None)
     fecha_medicion = models.DateField(null=True, blank=True, default=None)
-#    mensuras = models.SmallIntegerField(
-#        null=True, blank=True, choices=MENSURAS, default=1,
-#        verbose_name='cantidad de mensuras')
     inscripcion_numero = models.IntegerField('SCIT inscripción Nº',unique=True, null=True, blank=True, default=None)
     inscripcion_fecha = models.DateField('Fecha inscripción', null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
@@ -300,7 +290,7 @@ class Expediente(TimeStampedModel):
         max_length=100, null=True, blank=True, default=None)
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    plano = models.FileField(null=True, blank=True, default=None, upload_to='planos')
+    plano = FileBrowseField("Enlace al plano", max_length=200, directory="planos/", extensions=[".pdf"], blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse('expediente', kwargs={'pk': str(self.id)})
@@ -319,14 +309,6 @@ class Expediente(TimeStampedModel):
     def __str__(self):
         return u'%d' % self.id
 
-#    def save(self, force_insert=False, force_update=False):
-#        self.plano_ruta = None
-#        if self.inscripcion_numero:
-#            circ = self.expedientepartida_set.all().first().partida.sd.ds.dp.circunscripcion.id
-#            if circ:
-#                self.plano_ruta = "ftp://zentyal.estudio.lan/planos/%d/%06d.pdf" % (circ, self.inscripcion_numero)
-#        super(Expediente, self).save(force_insert, force_update)
-
 
 class ExpedienteLugar(models.Model):
     id = models.AutoField(primary_key=True)
@@ -343,11 +325,8 @@ class ExpedienteLugar(models.Model):
 
 
 class ExpedienteObjeto(models.Model):
-#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.AutoField(primary_key=True)
     expediente = models.ForeignKey(Expediente)
-#    mensura = models.SmallIntegerField(
-#        null=True, blank=True, choices=MENSURAS, default=1)
     objeto = models.ForeignKey('Objeto')
 
     class Meta:
@@ -365,7 +344,7 @@ class ExpedientePartida(models.Model):
     partida = models.ForeignKey('Partida')
     set_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    informe_catastral = models.FileField(null=True, blank=True, default=None, upload_to='set')
+    informe_catastral = FileBrowseField(max_length=200, directory="set/", extensions=[".pdf"], blank=True, null=True)
 
     class Meta:
         verbose_name = 'partida'
@@ -378,15 +357,8 @@ class ExpedientePartida(models.Model):
 
 
 class ExpedientePersona(models.Model):
-#    ITEMS = ((1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'),
-#             (5, 'e'), (6, 'f'), (7, 'g'), (8, 'h'))
-#    MENSURAS = ((1, 1), (2, 2), (3, 3), (4, 4))
     id = models.AutoField(primary_key=True)
     expediente = models.ForeignKey(Expediente)
-#    mensura = models.SmallIntegerField(
-#        null=True, blank=True, choices=MENSURAS, default=1)
-#    item = models.SmallIntegerField(
-#        null=True, blank=True, choices=ITEMS, default=None)
     persona = models.ForeignKey('Persona')
     comitente = models.BooleanField(default=False)
     propietario = models.BooleanField(default=True)
@@ -405,10 +377,11 @@ class ExpedientePersona(models.Model):
         verbose_name_plural = 'personas involucradas'
         ordering = [
             'persona__apellidos', 'persona__nombres']
-#            'mensura', 'item', 'persona__apellidos', 'persona__nombres']
 
     def __str__(self):
-       return u'%d - %s %s' % (self.expediente.id, self.persona.apellidos, self.persona.nombres)
+       return u'%d - %s %s' % (self.expediente.id,
+                               self.persona.apellidos,
+                               self.persona.nombres)
 
 
 class ExpedienteProfesional(models.Model):
@@ -428,7 +401,7 @@ class ExpedienteProfesional(models.Model):
 class Lugar(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = CharNullField(max_length=80)
-    obs = CharNullField(max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
 
     class Meta:
         verbose_name_plural = 'lugares'
@@ -543,7 +516,7 @@ class Persona(models.Model):
         ordering = ['apellidos', 'nombres']
 
     def __str__(self):
-        return u'%s %s' % (self.apellidos, self.nombres)
+        return self.nombre_completo()
 
     def save(self, force_insert=False, force_update=False):
         self.apellidos = self.apellidos.upper().strip()

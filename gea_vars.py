@@ -1,6 +1,3 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-
 #
 # Solicitud de inscripcion SCIT
 #
@@ -947,7 +944,7 @@ CP = (
   (u"ZAVALLA", u"ZAVALLA - S2123"),
   (u"ZENÓN PEREYRA", u"ZENÓN PEREYRA - S2409"),
 )
-
+CP_DEFAULT = u'GÁLVEZ'
 CP_dict = dict(CP)
 
 PROV = (
@@ -976,11 +973,13 @@ PROV = (
   (u'TIERRA DEL FUEGO', u'TIERRA DEL FUEGO'),
   (u'TUCUMÁN', u'TUCUMÁN'),
 )
+PROV_DEFAULT = u'SANTA FE'
 
 CIRC = (
   (u'SANTA FE', u'SANTA FE'),
   (u'ROSARIO', u'ROSARIO'),
 )
+CIRC_DEFAULT = u'SANTA FE'
 
 NOTA = (
   (u'DECLARATORIA DE HEREDEROS', u'DECLARATORIA DE HEREDEROS'),
@@ -992,7 +991,6 @@ NOTA = (
 #
 # Visacion Comunal/Municipal
 #
-
 LUGAR = (
   (0,  u'GÁLVEZ'),
   (1,  u'AROCENA'),

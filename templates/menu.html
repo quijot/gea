@@ -36,9 +36,9 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-search"></i> Buscar <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li{% block nav-search-plano %}{% endblock %}><a href="/gea/plano/"><i class="fa fa-map"></i> Nº de Plano</a></li>
-                <li{% block nav-search-set %}{% endblock %}><a href="/gea/set/"><i class="fa fa-sticky-note"></i> Informe Catastral</a></li>
-                <li{% block nav-search-cl %}{% endblock %}><a href="/gea/catastro/"><i class="fa fa-map-signs"></i> Catastros locales</a></li>
+                <li{% block nav-search-plano %}{% endblock %}><a href="{% url 'buscar_plano' %}"><i class="fa fa-map"></i> Nº de Plano</a></li>
+                <li{% block nav-search-set %}{% endblock %}><a href="{% url 'buscar_set' %}"><i class="fa fa-sticky-note"></i> Informe Catastral</a></li>
+                <li{% block nav-search-cl %}{% endblock %}><a href="{% url 'buscar_catastro' %}"><i class="fa fa-map-signs"></i> Catastros locales</a></li>
               </ul>
             </li>
             <!-- Herramientas -->
@@ -55,7 +55,7 @@
             <!-- admin -->
             <li><a href="/admin/"><i class="fa fa-user"></i> admin</a></li>
             <!-- Acerca de -->
-            <li><a href="#"><i class="fa fa-info-circle"></i> Acerca de</a></li>
+            <li><a href="{% url 'about' %}"><i class="fa fa-info-circle"></i> Acerca de</a></li>
           </ul>
         </div><!-- /.navbar-collapse -->
       </div><!-- /.container-fluid -->
