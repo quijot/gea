@@ -646,6 +646,8 @@ class QuerysetCalendar(HTMLCalendar):
 
 from django.utils.safestring import mark_safe
 
+
+@login_required
 def calendar(request, year, month):
     e = Expediente.objects.order_by('fecha_medicion').filter(
         fecha_medicion__year=year, fecha_medicion__month=month
