@@ -593,7 +593,7 @@ def catastro(request):
     else:
         form = CLForm()  # An unbound form
 
-    return render(request, 'tools/catastro_form.html', {
+    return render(request, 'search/catastro_form.html', {
         'form': form,
     })
 
