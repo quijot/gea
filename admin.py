@@ -440,6 +440,7 @@ class ExpedienteAdmin(NestedModelAdmin):
         AntecedenteInline]
     list_display = (
         'id',
+        'created',
         'fecha_medicion',
         'fecha_plano',
         'inscripcion_numero',
