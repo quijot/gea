@@ -2,10 +2,8 @@
 {% block title %}GEA | Inicio{% endblock %}
 {% block content %}
   {% load static from staticfiles %}
-      <div class="col-md-12 jumbotron">
-        <img src="{% static "img/folder.png" %}" alt="Expedientes" height="120px" class="pull-right">
-        <h1><i class="fa fa-globe"></i> <a href="/">GEA</a></h1>
-        <h4><strong>G</strong>estión de <strong>E</strong>xpedientes de <strong>A</strong>grimensores</h4>
+      <div class="page-header" id="panel-principal">
+        <h1><a href="/"><strong>GEA</strong></a> | Panel principal</h1>
       </div>
       <!-- Status -->
       <div class="col-md-4">
@@ -65,7 +63,8 @@
               {% for e in relev_list %}
               <li class="list-group-item">
                 <span class="badge">{{ e.fecha_medicion }}</span>
-                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - Día de relevamiento
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> -
+                {{ e.expedientepersona_set.first.persona.apellidos }}
               </li>
                 {% empty %}
               <li class="list-group-item active">
