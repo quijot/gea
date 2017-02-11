@@ -76,6 +76,30 @@
           </div>
         </div>
       </div>
+      <div class="col-md-8">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-folder-open"></i> <strong>Alta de Expedientes</strong></h3>
+            Últimas {{ open_list.count }} altas.
+          </div>
+          <div class="panel-body">
+             <ul class="list-group">
+              {% for e in open_list %}
+              <li class="list-group-item">
+                <span class="badge">{{ e.created }}</span>
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> -
+                <strong>{{ e.expedientepersona_set.first.persona.apellidos }}</strong> -
+                <em>{{ e.expedientelugar_set.first.lugar.nombre }}</em>
+              </li>
+                {% empty %}
+              <li class="list-group-item active">
+                No hay Expedientes en este Estado.
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
 <!--      <div class="col-md-4">
         <div class="panel panel-info">
           <div class="panel-heading">
@@ -128,7 +152,7 @@
                 </div>
               </div>
             </form>-->
-            <span class="pull-right"><a href="/gea/expedientes/?inscripto=no" class="btn btn-primary"><i class="fa fa-plus fa-lg"></i></a></span>
+            <span class="pull-right"><a href="{% url 'expedientes' %}" class="btn btn-primary"><i class="fa fa-plus fa-lg"></i></a></span>
             <h3 class="panel-title"><i class="fa fa-folder-open"></i> <strong>Expedientes abiertos</strong></h3>
             <strong>{{ count }}</strong> expediente{% if count > 1 %}s{% endif %} filtrado{% if count > 1 %}s{% endif %}
           </div>

@@ -71,6 +71,8 @@ class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
                                                         Q(orden_fecha__isnull=False)).order_by('-orden_fecha', 'orden_numero')[:5]
         # relevamientos
         context['relev_list'] = Expediente.objects.filter(fecha_medicion__isnull=False).order_by('-fecha_medicion')[:5]
+        # altas
+        context['open_list'] = Expediente.objects.filter(created__isnull=False).order_by('-created')[:10]
         return context 
 
     @method_decorator(login_required)
@@ -94,7 +96,9 @@ class ExpedienteMixin(object):
             )
         q = self.request.GET.get('inscripto')
         if q:  # plano inscripto
-            qset = qset.filter(inscripcion_numero__isnull=not q)
+            qset = qset.filter(inscripcion_numero__isnull=False)
+        else:
+            qset = qset.filter(inscripcion_numero__isnull=True)
         q = self.request.GET.get('cancelado')
         if q:  # expediente cancelado
             qset = qset.filter(cancelado=q)
