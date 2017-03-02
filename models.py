@@ -1,7 +1,7 @@
 from django.db import models
 from django_extensions.db.models import (
     TitleSlugDescriptionModel, TimeStampedModel)
-#from django.urls import reverse
+# from django.urls import reverse
 from django.core.urlresolvers import reverse
 from filebrowser.fields import FileBrowseField
 
@@ -107,10 +107,13 @@ class Antecedente(models.Model):
     inscripcion_numero = models.IntegerField(
         null=True, blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True,
+                        default=None)
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    plano = FileBrowseField("Enlace al plano", max_length=200, directory="planos/", extensions=[".pdf"], blank=True, null=True)
+    plano = FileBrowseField("Enlace al plano", max_length=200,
+                            directory="planos/", extensions=[".pdf"],
+                            blank=True, null=True)
 
 
 class Catastro(models.Model):
@@ -128,9 +131,11 @@ class Catastro(models.Model):
 
     def __str__(self):
         if str(self.zona) in ('1', '2', '3'):
-            return u''.join(('Z:',str(self.zona),' - S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
+            return u''.join(('Z:', str(self.zona), ' - S:', self.seccion,
+                             ' - M:', self.manzana, ' - P:', self.parcela))
         elif str(self.zona) in ('4', '5'):
-            return u''.join(('Z:',str(self.zona),' - Pol:',self.poligono,' - P:',self.parcela))
+            return u''.join(('Z:', str(self.zona), ' - Pol:', self.poligono,
+                             ' - P:', self.parcela))
         else:
             return u''
 
@@ -152,7 +157,8 @@ class CatastroLocal(models.Model):
         verbose_name_plural = 'catastros locales'
 
     def __str__(self):
-        return u''.join(('S:',self.seccion,' - M:',self.manzana,' - P:',self.parcela))
+        return u''.join(('S:', self.seccion, ' - M:', self.manzana, ' - P:',
+                         self.parcela))
 
 
 class Circunscripcion(models.Model):
@@ -183,14 +189,15 @@ class Presupuesto(models.Model):
     fecha = models.DateField()
     porcentaje_cancelado = models.DecimalField(
         max_digits=5, decimal_places=2, verbose_name='% cancelado')
-    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True,
+                        default=None)
 
     class Meta:
         ordering = ['expediente']
 
     def __str__(self):
         return u'%s - $%s - %s' % (self.expediente, str(self.monto),
-        str(self.fecha))
+                                   str(self.fecha))
 
 
 class Pago(models.Model):
@@ -201,7 +208,8 @@ class Pago(models.Model):
     fecha = models.DateField(null=True, blank=True, default=None)
     monto = models.DecimalField(max_digits=8, decimal_places=2)
     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
-    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True,
+                        default=None)
 
     def __str__(self):
         return u'%s%% - %s' % (str(self.porcentaje), str(self.fecha))
@@ -279,25 +287,32 @@ class Expediente(TimeStampedModel):
     id = models.IntegerField('Expediente Nº', primary_key=True)
     fecha_plano = models.DateField(null=True, blank=True, default=None)
     fecha_medicion = models.DateField(null=True, blank=True, default=None)
-    inscripcion_numero = models.IntegerField('SCIT inscripción Nº',unique=True, null=True, blank=True, default=None)
-    inscripcion_fecha = models.DateField('Fecha inscripción', null=True, blank=True, default=None)
+    inscripcion_numero = models.IntegerField('SCIT inscripción Nº',unique=True,
+                                             null=True, blank=True,
+                                             default=None)
+    inscripcion_fecha = models.DateField('Fecha inscripción', null=True,
+                                         blank=True, default=None)
     duplicado = models.BooleanField(default=False)
-    orden_numero = models.IntegerField('CoPA Expendiente Nº', null=True, blank=True, default=None)
-    orden_fecha = models.DateField('Fecha contrato', null=True, blank=True, default=None)
+    orden_numero = models.IntegerField('CoPA Expendiente Nº', null=True,
+                                       blank=True, default=None)
+    orden_fecha = models.DateField('Fecha contrato', null=True, blank=True,
+                                   default=None)
     sin_inscripcion = models.BooleanField(default=False)
     cancelado = models.BooleanField(default=False)
-    cancelado_por = CharNullField(
-        max_length=100, null=True, blank=True, default=None)
-    plano_ruta = URLNullField(
-        max_length=100, null=True, blank=True, default=None)
-    plano = FileBrowseField("Enlace al plano", max_length=200, directory="planos/", extensions=[".pdf"], blank=True, null=True)
+    cancelado_por = CharNullField(max_length=100, null=True, blank=True,
+                                  default=None)
+    plano_ruta = URLNullField(max_length=100, null=True, blank=True,
+                              default=None)
+    plano = FileBrowseField("Enlace al plano", max_length=200,
+                            directory="planos/", extensions=[".pdf"],
+                            blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse('expediente', kwargs={'pk': str(self.id)})
-        #return "/gea/expedientes/%i" % self.id # MAL: poco portable
+        # return "/gea/expedientes/%i" % self.id # MAL: poco portable
 
     def inscripto(self):
-        return (inscripcion_numero != 0)
+        return (self.inscripcion_numero != 0)
 
     def propietarios_count(self):
         """Devuelve la cantidad de personas que figuran como propietarias."""
@@ -344,7 +359,9 @@ class ExpedientePartida(models.Model):
     partida = models.ForeignKey('Partida')
     set_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    informe_catastral = FileBrowseField(max_length=200, directory="set/", extensions=[".pdf"], blank=True, null=True)
+    informe_catastral = FileBrowseField(max_length=200, directory="set/",
+                                        extensions=[".pdf"], blank=True,
+                                        null=True)
 
     class Meta:
         verbose_name = 'partida'
@@ -353,7 +370,6 @@ class ExpedientePartida(models.Model):
 
     def __str__(self):
         return u'%s' % self.partida
-        #return u'%s - %s'.encode('utf-8') % (str(self.expediente), self.partida)
 
 
 class ExpedientePersona(models.Model):
@@ -379,9 +395,9 @@ class ExpedientePersona(models.Model):
             'persona__apellidos', 'persona__nombres']
 
     def __str__(self):
-       return u'%d - %s %s' % (self.expediente.id,
-                               self.persona.apellidos,
-                               self.persona.nombres)
+        return u'%d - %s %s' % (self.expediente.id,
+                                self.persona.apellidos,
+                                self.persona.nombres)
 
 
 class ExpedienteProfesional(models.Model):
@@ -401,7 +417,8 @@ class ExpedienteProfesional(models.Model):
 class Lugar(models.Model):
     id = models.AutoField(primary_key=True)
     nombre = CharNullField(max_length=80)
-    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True, default=None)
+    obs = CharNullField("Observaciones", max_length=255, null=True, blank=True,
+                        default=None)
 
     class Meta:
         verbose_name_plural = 'lugares'
@@ -444,7 +461,8 @@ class Partida(models.Model):
         return (10 - (suma % 10)) % 10
 
     def get_dvapi(self):
-        return self.calc_dvapi(int(self.sd.nomenclatura), self.pii, self.subpii)
+        return self.calc_dvapi(int(self.sd.nomenclatura), self.pii,
+                               self.subpii)
     dvapi = property(get_dvapi)
 
     class Meta:
@@ -478,7 +496,8 @@ class PartidaDominio(models.Model):
 
 class Persona(models.Model):
     id = models.AutoField(primary_key=True)
-    nombres = CharNullField(max_length=100, null=True, blank=True, default=None)
+    nombres = CharNullField(max_length=100, null=True, blank=True,
+                            default=None)
     apellidos = CharNullField(max_length=100)
     nombres_alternativos = CharNullField(
         max_length=100, null=True, blank=True, default=None)
@@ -487,7 +506,8 @@ class Persona(models.Model):
     domicilio = CharNullField(
         max_length=50, null=True, blank=True, default=None)
     lugar = models.ForeignKey(Lugar, null=True, blank=True, default=None)
-    telefono = CharNullField(max_length=20, null=True, blank=True, default=None)
+    telefono = CharNullField(max_length=20, null=True, blank=True,
+                             default=None)
     celular = CharNullField(max_length=20, null=True, blank=True, default=None)
     email = EmailNullField(
         max_length=50, unique=True, null=True, blank=True, default=None)
