@@ -41,7 +41,7 @@
               {% for e in ord_list %}
               <li class="list-group-item">
                 <span class="badge">{{ e.orden_fecha }}</span>
-                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - Expte. CoPA Nº <strong>{{ e.orden_numero }}</strong>
+                <a href="/admin/gea/expediente/{{ e.id }}/">{{ e.id }}</a> - CoPA Nº <strong>{{ e.orden_numero }}</strong>
               </li>
                 {% empty %}
               <li class="list-group-item active">
