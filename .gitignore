@@ -4,6 +4,7 @@
 *.pyc
 local_settings.py
 ToDo
+static/css/bootstrap.min.css.*
 
 backup
 
