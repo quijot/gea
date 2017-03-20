@@ -11,7 +11,7 @@ from django.db.models import Count, Q
 
 from .models import Expediente, Persona, Objeto, Lugar, Partida, CatastroLocal
 from .gea_vars import CP, CP_DEFAULT, CP_dict, PROV, PROV_DEFAULT, CIRC, \
-CIRC_DEFAULT, NOTA, LUGAR, Lugar_dict
+    CIRC_DEFAULT, NOTA, LUGAR, Lugar_dict
 
 from django.views.generic import TemplateView, ListView, DetailView
 
@@ -59,7 +59,7 @@ class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
            ListView):
     template_name = 'home/index.html'
     model = Expediente
-        
+
     def get_context_data(self, *args, **kwargs):
         context = super(Home, self).get_context_data(*args, **kwargs)
         # last 5 inscriptos
@@ -73,7 +73,7 @@ class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
         context['relev_list'] = Expediente.objects.filter(fecha_medicion__isnull=False).order_by('-fecha_medicion')[:5]
         # altas
         context['open_list'] = Expediente.objects.filter(created__isnull=False).order_by('-created')[:10]
-        return context 
+        return context
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -283,9 +283,11 @@ class CaratulaForm(forms.Form):
     numero = forms.IntegerField(label='Número', required=False)
     fecha = forms.DateField(required=False)
     obs = forms.CharField(label='Observaciones',
-        widget=forms.Textarea(attrs={
-        'placeholder': 'ej: Modifica el Lote Nº 1 del Plano Nº 23.456. Etc.'
-        }), required=False)
+                          widget=forms.Textarea(attrs={
+                              'placeholder': 'ej: Modifica el Lote Nº 1 del Plano Nº 23.456. Etc.'
+                          }), required=False)
+    FORMAT_CHOICES = (('html', 'HTML'),('dxf', 'DXF'),)
+    fmt = forms.ChoiceField(label='Formato de salida', choices=FORMAT_CHOICES)
 
 
 @login_required
@@ -295,7 +297,7 @@ def caratula(request):
         form = CaratulaForm(request.POST)  # A form bound to the POST data
         if form.is_valid():  # All validation rules pass
             # Process the data in form.cleaned_data
-            # ...
+            #
             expediente_id = form.cleaned_data['expte_nro']
             inmueble = form.cleaned_data['inmueble']
             tomo = form.cleaned_data['tomo']
@@ -304,9 +306,10 @@ def caratula(request):
             numero = form.cleaned_data['numero']
             fecha = form.cleaned_data['fecha']
             obs = form.cleaned_data['obs']
+            fmt = form.cleaned_data['fmt']
 
             e = get_object_or_404(Expediente, id=expediente_id)
-            template = loader.get_template('tools/caratula.html')
+            template = loader.get_template('tools/caratula.%s' % fmt)
             context = Context({
                 'e': e,
                 'inmueble': inmueble,
@@ -316,8 +319,14 @@ def caratula(request):
                 'numero': numero,
                 'fecha_dominio': fecha,
                 'obs': obs,
+                'fmt': fmt,
             })
-            return HttpResponse(template.render(context))
+            if fmt != "html":
+                response = HttpResponse(template.render(context), content_type='image/x-%s' % fmt)
+                response['Content-Disposition'] = 'attachment; filename=%04d-caratula.%s' % (expediente_id, fmt)
+            else:
+                return HttpResponse(template.render(context))
+            return response
     else:
         form = CaratulaForm()  # An unbound form
 
@@ -646,7 +655,9 @@ class QuerysetCalendar(HTMLCalendar):
     def day_cell(self, cssclass, body):
         return '<td class="%s">%s</td>' % (cssclass, body)
 
+
 #######
+
 
 from django.utils.safestring import mark_safe
 
