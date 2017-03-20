@@ -2033,7 +2033,7 @@ AcDbText
  40
 3.0
   1
-Expte. Co.P.A. NÂ° XXX.XXX - XX/XX/2016.
+Expte. Co.P.A. Nº XXX.XXX - XX/XX/2016.
 100
 AcDbText
   0
@@ -2201,7 +2201,7 @@ AcDbText
  40
 3.0
   1
-TÂº 0000 Imp./Par - FÂº 0000 - NÂº 000.000 - 00/00/0000.
+Tº {{ tomo|default:"____" }} {% if par %}Par{% else %}Impar{% endif %} - Fº {{ folio|default:"____" }} - Nº {{ numero|default:"______" }} - {{ fecha|default:"__/__/____" }}.
 100
 AcDbText
   0
@@ -2253,7 +2253,7 @@ AcDbText
  40
 3.0
   1
-Sup. s/TÃ­tulo
+Sup. s/Título
 100
 AcDbText
   0
@@ -2279,7 +2279,7 @@ AcDbText
  40
 3.0
   1
-000,00 mÂ²
+000,00 m²
 100
 AcDbText
   0
@@ -2383,7 +2383,7 @@ AcDbText
  40
 3.0003
   1
-000,00 mÂ²
+000,00 m²
 100
 AcDbText
   0
@@ -2473,7 +2473,7 @@ AcDbText
  40
 2.5
   1
-INFORMACIÃ“N TERRITORIAL
+INFORMACIÓN TERRITORIAL
 100
 AcDbText
   0
@@ -2499,7 +2499,7 @@ AcDbText
  40
 2.5
   1
-DirecciÃ³n TOPOCARTOGRÃFICA
+Dirección TOPOCARTOGRÁFICA
 100
 AcDbText
   0
@@ -2603,7 +2603,7 @@ AcDbText
  40
 2.5
   1
-NÂ°
+Nº
 100
 AcDbText
   0
@@ -2771,7 +2771,7 @@ AcDbText
  40
 2.0
   1
-San MartÃ­n 430 1Â° Piso - GÃ¡lvez
+{{ p.profesional.domicilio }} - {{ p.profesional.lugar.obs|upper }}{% endwith %}
 100
 AcDbText
   0
@@ -2909,7 +2909,7 @@ AcDbText
  40
 2.0
   1
-PII NÂº: {% if e.expedientepartida_set.count > 1 %}VER DETALLE{% else %}{% for ep in e.expedientepartida_set.all %}{% with ep.partida as p %}{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}{% endwith %}{% endfor %}{% endif %}
+PII Nº: {% if e.expedientepartida_set.count > 1 %}VER DETALLE{% else %}{% for ep in e.expedientepartida_set.all %}{% with ep.partida as p %}{{ p.pii|stringformat:"06d" }}/{{ p.subpii|stringformat:"04d" }}{% endwith %}{% endfor %}{% endif %}
 100
 AcDbText
   0
@@ -5019,7 +5019,7 @@ AcDbText
  40
 3.0
   1
-Expte. Co.P.A. NÂ° {{ e.orden_numero }} - {{ e.orden_fecha }}.
+Expte. Co.P.A. Nº {{ e.orden_numero }} - {{ e.orden_fecha }}.
 100
 AcDbText
   0
