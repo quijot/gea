@@ -24,10 +24,10 @@ class CounterMixin(object):
         return context
 
 
-class NumeroSearchMixin(object):
+class SearchMixin(object):
 
     def get_queryset(self):
-        qset = super(NumeroSearchMixin, self).get_queryset()
+        qset = super(SearchMixin, self).get_queryset()
         q = self.request.GET.get('search')
         if q:
             q = q.split(' ')
@@ -55,8 +55,7 @@ class ExpedienteAbiertoMixin(object):
         return qset
 
 
-class Home(CounterMixin, NumeroSearchMixin, ExpedienteAbiertoMixin,
-           ListView):
+class Home(CounterMixin, SearchMixin, ExpedienteAbiertoMixin, ListView):
     template_name = 'home/index.html'
     model = Expediente
 
@@ -111,8 +110,7 @@ class ExpedienteMixin(object):
         return qset
 
 
-class ExpedienteList(CounterMixin, NumeroSearchMixin, ExpedienteMixin,
-                     ListView):
+class ExpedienteList(CounterMixin, SearchMixin, ListView):
     template_name = 'lists/expediente_list.html'
     model = Expediente
     paginate_by = 10
