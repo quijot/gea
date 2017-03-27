@@ -15,10 +15,12 @@ urlpatterns = [
     # About
     url(r'^acerca/$', About.as_view(), name='about'),
     # Catastros Locales
-    url(r'^catastros-locales/$', CatastroLocalList.as_view(), name='catastros_locales'),
+    url(r'^catastros-locales/$', CatastroLocalList.as_view(),
+        name='catastros_locales'),
     # Expedientes
     url(r'^expedientes/$', ExpedienteList.as_view(), name="expedientes"),
-    url(r'^expedientes/(?P<pk>\d+)/$', ExpedienteDetail.as_view(), name="expediente"),
+    url(r'^expedientes/(?P<pk>\d+)/$', ExpedienteDetail.as_view(),
+        name="expediente"),
     # Personas
     url(r'^personas/$', PersonaList.as_view(), name="personas"),
     url(r'^personas/(?P<pk>\d+)/$', PersonaDetail.as_view(), name="persona"),
@@ -33,6 +35,7 @@ urlpatterns = [
     url(r'^caratula/$', caratula, name="caratula"),
     url(r'^dvapi/$', dvapi, name='dvapi'),
     url(r'^sie/$', sie, name='sie'),
-    url(r'^cal/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', calendar, name='cal'),
+    # url(r'^cal/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', calendar,
+    #     name='cal'),
     # url(r'^cal/$', calendar, name='cal'),
 ]
