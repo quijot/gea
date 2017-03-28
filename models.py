@@ -581,7 +581,7 @@ class Profesional(models.Model):
     def save(self, force_insert=False, force_update=False):
         self.apellidos = self.apellidos.upper().strip()
         self.nombres = CapitalizePhrase(self.nombres)
-        super(Persona, self).save(force_insert, force_update)
+        super(Profesional, self).save(force_insert, force_update)
 
 
 class Titulo(models.Model):
