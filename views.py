@@ -7,9 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from django import forms
-from django.db.models import Count, Q
+from django.db.models import Q
 
-from .models import Expediente, Persona, Objeto, Lugar, Partida, CatastroLocal
+from .models import Expediente, Persona, Lugar, CatastroLocal
 from .gea_vars import CP, CP_DEFAULT, CP_dict, PROV, PROV_DEFAULT, CIRC, \
     CIRC_DEFAULT, NOTA, LUGAR, Lugar_dict
 
@@ -62,16 +62,29 @@ class Home(CounterMixin, SearchMixin, ExpedienteAbiertoMixin, ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(Home, self).get_context_data(*args, **kwargs)
         # last 5 inscriptos
-        context['insc_list'] = Expediente.objects.filter(Q(inscripcion_numero__isnull=False) &
-                                                         Q(inscripcion_fecha__isnull=False)).order_by('-inscripcion_fecha', 'inscripcion_numero')[:5]
+        context['insc_list'] = \
+            Expediente.objects.filter(
+                Q(inscripcion_numero__isnull=False) &
+                Q(inscripcion_fecha__isnull=False)
+            ).order_by('-inscripcion_fecha',
+                       'inscripcion_numero')[:5]
         # ordenes pendientes
-        context['ord_list'] = Expediente.objects.filter(Q(orden_numero__isnull=False) &
-                                                        Q(inscripcion_numero__isnull=True) &
-                                                        Q(orden_fecha__isnull=False)).order_by('-orden_fecha', 'orden_numero')[:5]
+        context['ord_list'] = \
+            Expediente.objects.filter(
+                Q(orden_numero__isnull=False) &
+                Q(inscripcion_numero__isnull=True) &
+                Q(orden_fecha__isnull=False)
+            ).order_by('-orden_fecha', 'orden_numero')[:5]
         # relevamientos
-        context['relev_list'] = Expediente.objects.filter(fecha_medicion__isnull=False).order_by('-fecha_medicion')[:5]
+        context['relev_list'] = \
+            Expediente.objects.filter(
+                fecha_medicion__isnull=False
+            ).order_by('-fecha_medicion')[:5]
         # altas
-        context['open_list'] = Expediente.objects.filter(created__isnull=False).order_by('-created')[:10]
+        context['open_list'] = \
+            Expediente.objects.filter(
+                created__isnull=False
+            ).order_by('-created')[:10]
         return context
 
     @method_decorator(login_required)
@@ -139,22 +152,20 @@ class ExpedienteDetail(DetailView):
 class NombreSearchMixin(object):
 
     def get_queryset(self):
-        qset = super(NombreSearchMixin, self).get_queryset()
-        q = self.request.GET.get('search')
-        if q:
-            q = q.split(' ')
-            for w in q:
-                qset = qset.filter(
-                    Q(nombres__icontains=w) |
-                    Q(apellidos__icontains=w) |
-                    Q(nombres_alternativos__icontains=w) |
-                    Q(apellidos_alternativos__icontains=w) |
-                    Q(expedientepersona__expediente__id__contains=w) |
-                    Q(expedientepersona__expediente__inscripcion_numero__contains=w) |
-                    Q(expedientepersona__expediente__expedientepartida__partida__pii__contains=w) |
-                    Q(expedientepersona__expediente__expedientelugar__lugar__nombre__icontains=w)
-                ).distinct()
-        return qset
+        q = super(NombreSearchMixin, self).get_queryset()
+        query = self.request.GET.get('search').split()
+        for w in query:
+            q = q.filter(
+                Q(nombres__icontains=w)
+                | Q(apellidos__icontains=w)
+                | Q(nombres_alternativos__icontains=w)
+                | Q(apellidos_alternativos__icontains=w)
+                | Q(expedientepersona__expediente__id__contains=w)
+                | Q(expedientepersona__expediente__inscripcion_numero__contains=w)
+                | Q(expedientepersona__expediente__expedientepartida__partida__pii__contains=w)
+                | Q(expedientepersona__expediente__expedientelugar__lugar__nombre__icontains=w)
+            ).distinct()
+        return q
 
 
 class PersonaList(CounterMixin, NombreSearchMixin, ListView):
@@ -250,18 +261,31 @@ class CatastroLocalList(CounterMixin, CLMixin, ListView):
         context['manzana'] = m
         p = self.request.GET.get('parcela')
         context['parcela'] = p
-        context['lugares'] = Lugar.objects.values_list('nombre',
-          flat=True).order_by('nombre')
-        context['secciones'] = CatastroLocal.objects.filter(
-          expediente_lugar__lugar__nombre=l).values_list('seccion',
-          flat=True).distinct().order_by('seccion')
-        context['manzanas'] = CatastroLocal.objects.filter(
-          expediente_lugar__lugar__nombre=l).filter(seccion=s).values_list(
-          'manzana', flat=True).distinct().order_by('manzana')
-        context['parcelas'] = CatastroLocal.objects.filter(
-          expediente_lugar__lugar__nombre=l).filter(Q(seccion=s) &
-          Q(manzana=m)).values_list(
-          'parcela', flat=True).distinct().order_by('parcela')
+        context['lugares'] = \
+            Lugar.objects.values_list(
+                'nombre',
+                flat=True
+            ).order_by('nombre')
+        context['secciones'] = \
+            CatastroLocal.objects.filter(
+                expediente_lugar__lugar__nombre=l
+            ).values_list('seccion',
+                          flat=True
+                          ).distinct().order_by('seccion')
+        context['manzanas'] = \
+            CatastroLocal.objects.filter(
+                expediente_lugar__lugar__nombre=l
+            ).filter(seccion=s).values_list('manzana',
+                                            flat=True
+                                            ).distinct().order_by('manzana')
+        context['parcelas'] = \
+            CatastroLocal.objects.filter(
+                expediente_lugar__lugar__nombre=l
+            ).filter(Q(seccion=s) &
+                     Q(manzana=m)
+                     ).values_list('parcela',
+                                   flat=True
+                                   ).distinct().order_by('parcela')
         return context
 
     @method_decorator(login_required)
@@ -271,10 +295,11 @@ class CatastroLocalList(CounterMixin, CLMixin, ListView):
 
 class CaratulaForm(forms.Form):
     expte_nro = forms.IntegerField(label='Expediente Nº',
-        widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
-    inmueble = forms.CharField(widget=forms.Textarea(attrs={
-        'placeholder': 'ej: Una fracción de terreno...'
-        }), required=False)
+                                   widget=forms.NumberInput(
+                                       attrs={'placeholder': 'ej: 4300'}))
+    inmueble = forms.CharField(widget=forms.Textarea(
+        attrs={'placeholder': 'ej: Una fracción de terreno...'}),
+        required=False)
     tomo = forms.IntegerField(required=False)
     par = forms.BooleanField(required=False)
     folio = forms.IntegerField(required=False)
@@ -282,9 +307,12 @@ class CaratulaForm(forms.Form):
     fecha = forms.DateField(required=False)
     obs = forms.CharField(label='Observaciones',
                           widget=forms.Textarea(attrs={
-                              'placeholder': 'ej: Modifica el Lote Nº 1 del Plano Nº 23.456. Etc.'
+                              'placeholder':
+                              'ej: Modifica el Lote Nº 1 del \
+                              Plano Nº 23.456. Etc.'
                           }), required=False)
-    FORMAT_CHOICES = (('html', 'HTML'),('dxf', 'DXF'),)
+    FORMAT_CHOICES = (('html', 'HTML'),
+                      ('dxf', 'DXF'),)
     fmt = forms.ChoiceField(label='Formato de salida', choices=FORMAT_CHOICES)
 
 
@@ -298,6 +326,7 @@ def caratula(request):
             #
             expediente_id = form.cleaned_data['expte_nro']
             inmueble = form.cleaned_data['inmueble']
+            matricula = form.cleaned_data['matricula']
             tomo = form.cleaned_data['tomo']
             par = form.cleaned_data['par']
             folio = form.cleaned_data['folio']
@@ -311,6 +340,7 @@ def caratula(request):
             context = Context({
                 'e': e,
                 'inmueble': inmueble,
+                'matricula': matricula,
                 'tomo': tomo,
                 'par': par,
                 'folio': folio,
@@ -320,8 +350,10 @@ def caratula(request):
                 'fmt': fmt,
             })
             if fmt != "html":
-                response = HttpResponse(template.render(context), content_type='image/x-%s' % fmt)
-                response['Content-Disposition'] = 'attachment; filename=%04d-caratula.%s' % (expediente_id, fmt)
+                response = HttpResponse(template.render(context),
+                                        content_type='image/x-%s' % fmt)
+                cd = 'attachment; filename=%04d-caratula.%s'
+                response['Content-Disposition'] = cd % (expediente_id, fmt)
             else:
                 return HttpResponse(template.render(context))
             return response
@@ -335,17 +367,22 @@ def caratula(request):
 
 class SolicitudForm(forms.Form):
     expte_nro = forms.IntegerField(label='Expediente Nº',
-        widget=forms.NumberInput(attrs={'placeholder': 'ej: 4300'}))
-    circunscripcion = forms.ChoiceField(label='Circunscripción', choices=CIRC, initial=CIRC_DEFAULT)
-    domicilio_fiscal = forms.CharField(max_length=40, widget=forms.TextInput(
-        attrs={'placeholder': 'ej: San Martín 430'}))
+                                   widget=forms.NumberInput(
+                                       attrs={'placeholder': 'ej: 4300'}))
+    circunscripcion = forms.ChoiceField(label='Circunscripción',
+                                        choices=CIRC, initial=CIRC_DEFAULT)
+    domicilio_fiscal = forms.CharField(max_length=40,
+                                       widget=forms.TextInput(
+                                           attrs={'placeholder':
+                                                  'ej: San Martín 430'}))
     localidad = forms.ChoiceField(choices=CP, initial=CP_DEFAULT)
     provincia = forms.ChoiceField(choices=PROV, initial=PROV_DEFAULT)
     nota_titulo = forms.ChoiceField(label='Nota título', choices=NOTA)
     nota = forms.CharField(label='Nota contenido',
-        widget=forms.Textarea(attrs={
-        'placeholder': 'Ingrese el texto de la nota correspondiente'
-        }), required=False)
+                           widget=forms.Textarea(attrs={'placeholder':
+                                                        'Ingrese el texto de la\
+                                                        nota correspondiente'
+                                                        }), required=False)
 
 
 @login_required
@@ -428,8 +465,13 @@ ftp_url = 'ftp://zentyal.estudio.lan'
 
 
 class PlanoForm(forms.Form):
-    circ = forms.IntegerField(label='Circunscripción', min_value=1, max_value=2, initial=1)
-    n_insc = forms.IntegerField(label='Plano Nº', min_value=1, max_value=999999)
+    circ = forms.IntegerField(label='Circunscripción',
+                              min_value=1,
+                              max_value=2,
+                              initial=1)
+    n_insc = forms.IntegerField(label='Plano Nº',
+                                min_value=1,
+                                max_value=999999)
 
 
 @login_required
@@ -453,8 +495,12 @@ def plano(request):
 # Buscar Set de Datos por PII
 #
 class SetForm(forms.Form):
-    partida = forms.IntegerField(min_value=1, max_value=999999)
-    sub_pii = forms.IntegerField(label='Subpartida', min_value=0, max_value=9999, initial=0)
+    partida = forms.IntegerField(min_value=1,
+                                 max_value=999999)
+    sub_pii = forms.IntegerField(label='Subpartida',
+                                 min_value=0,
+                                 max_value=9999,
+                                 initial=0)
 
 
 @login_required
@@ -464,25 +510,38 @@ def set(request):
         if form.is_valid():  # All validation rules pass
             pii = form.cleaned_data['partida']
             sub_pii = form.cleaned_data['sub_pii']
-            return HttpResponseRedirect(
-                '%s/set/%06d%04d.pdf' % (ftp_url, pii, sub_pii))
+            url = '%s/set/%06d%04d.pdf' % (ftp_url, pii, sub_pii)
+            return HttpResponseRedirect(url)
     else:
         form = SetForm()  # An unbound form
 
-    return render(request, 'search/set_form.html', {
-        'form': form,
-    })
+    return render(request,
+                  'search/set_form.html',
+                  {'form': form, })
 
 
 #
 # Calcular Digito Verificador de la PII
 #
 class DVAPIForm(forms.Form):
-    dp = forms.IntegerField(label='DP (departamento)', min_value=1, max_value=19, initial=11)
-    ds = forms.IntegerField(label='DS (distrito)', min_value=1, max_value=99, initial=8)
-    sd = forms.IntegerField(label='SD (subdistrito)', min_value=0, max_value=99, initial=0)
-    partida = forms.IntegerField(min_value=1, max_value=999999)
-    sub_pii = forms.IntegerField(label='Subpartida', min_value=0, max_value=9999, initial=0)
+    dp = forms.IntegerField(label='DP (departamento)',
+                            min_value=1,
+                            max_value=19,
+                            initial=11)
+    ds = forms.IntegerField(label='DS (distrito)',
+                            min_value=1,
+                            max_value=99,
+                            initial=8)
+    sd = forms.IntegerField(label='SD (subdistrito)',
+                            min_value=0,
+                            max_value=99,
+                            initial=0)
+    partida = forms.IntegerField(min_value=1,
+                                 max_value=999999)
+    sub_pii = forms.IntegerField(label='Subpartida',
+                                 min_value=0,
+                                 max_value=9999,
+                                 initial=0)
 
 
 def get_dvapi(dp, ds, sd, pii, subpii):
@@ -506,25 +565,31 @@ def dvapi(request):
             pii = form.cleaned_data['partida']
             sub_pii = form.cleaned_data['sub_pii']
             dv = get_dvapi(dp, ds, sd, pii, sub_pii)
-            return render_to_response('tools/dvapi_form.html', {
-                'dv': dv,
-                'form': form
-            }, context_instance=RequestContext(request))
+            return render_to_response('tools/dvapi_form.html',
+                                      {'dv': dv, 'form': form},
+                                      context_instance=RequestContext(request))
     else:
         form = DVAPIForm()  # An unbound form
 
-    return render(request, 'tools/dvapi_form.html', {
-        'form': form,
-    })
+    return render(request,
+                  'tools/dvapi_form.html',
+                  {'form': form, })
 
 
 #
 # Consultar estado en Sistema de Información de Expedientes del SCIT
 #
 class SIEForm(forms.Form):
-    mesa = forms.IntegerField(min_value=13401, max_value=13401, initial=13401)
-    nro = forms.IntegerField(label='Número', min_value=1, max_value=9999999)
-    digito = forms.IntegerField(label='Dígito', min_value=0, max_value=9, initial=0)
+    mesa = forms.IntegerField(min_value=13401,
+                              max_value=13401,
+                              initial=13401)
+    nro = forms.IntegerField(label='Número',
+                             min_value=1,
+                             max_value=9999999)
+    digito = forms.IntegerField(label='Dígito',
+                                min_value=0,
+                                max_value=9,
+                                initial=0)
 
 
 def sie(request):
@@ -534,9 +599,11 @@ def sie(request):
             mesa = form.cleaned_data['mesa']
             nro = form.cleaned_data['nro']
             dv = form.cleaned_data['digito']
-            #dv = get_dvsie(mesa, nro)
-            return HttpResponseRedirect(
-                'https://www.santafe.gov.ar/index.php/apps/sie?mesa=%d&numero=%d&digito=%d' % (mesa, nro, dv))
+            # dv = get_dvsie(mesa, nro)
+            base_url = 'https://www.santafe.gov.ar/index.php/apps/'
+            param = 'sie?mesa=%d&numero=%d&digito=%d' % (mesa, nro, dv)
+            url = ''.join([base_url, param])
+            return HttpResponseRedirect(url)
     else:
         form = SIEForm()  # An unbound form
 
@@ -605,65 +672,65 @@ def catastro(request):
     })
 
 
-######
-###### EXPERIMENTAL
-######
-from calendar import HTMLCalendar
-from datetime import date
-from itertools import groupby
-
-from django.utils.html import conditional_escape as esc
-
-class QuerysetCalendar(HTMLCalendar):
-
-    def __init__(self, queryset, datefield):
-        self.datefield = datefield
-        super(QuerysetCalendar, self).__init__()
-        self.queryset_by_date = self.group_by_day(queryset)
-
-    def formatday(self, day, weekday):
-        if day != 0:
-            cssclass = self.cssclasses[weekday]
-            if date.today() == date(self.year, self.month, day):
-                cssclass += ' today'
-            if day in self.queryset_by_date:
-                cssclass += ' filled'
-                body = ['<ul>']
-                for item in self.queryset_by_date[day]:
-                    body.append('<li>')
-                    body.append('<a href="%s">' % item.get_absolute_url())
-                    body.append(esc(item))
-                    body.append('</a></li>')
-                body.append('</ul>')
-                return self.day_cell(cssclass, '%d %s' % (day, ''.join(body)))
-            return self.day_cell(cssclass, day)
-        return self.day_cell('noday', ' ')
+# #####
+# ##### EXPERIMENTAL
+# #####
+# from calendar import HTMLCalendar
+# from datetime import date
+# from itertools import groupby
+#
+# from django.utils.html import conditional_escape as esc
 
 
-    def formatmonth(self, year, month):
-        self.year, self.month = year, month
-        return super(QuerysetCalendar, self).formatmonth(year, month)
+# class QuerysetCalendar(HTMLCalendar):
+#
+#     def __init__(self, queryset, datefield):
+#         self.datefield = datefield
+#         super(QuerysetCalendar, self).__init__()
+#         self.queryset_by_date = self.group_by_day(queryset)
+#
+#     def formatday(self, day, weekday):
+#         if day != 0:
+#             cssclass = self.cssclasses[weekday]
+#             if date.today() == date(self.year, self.month, day):
+#                 cssclass += ' today'
+#             if day in self.queryset_by_date:
+#                 cssclass += ' filled'
+#                 body = ['<ul>']
+#                 for item in self.queryset_by_date[day]:
+#                     body.append('<li>')
+#                     body.append('<a href="%s">' % item.get_absolute_url())
+#                     body.append(esc(item))
+#                     body.append('</a></li>')
+#                 body.append('</ul>')
+#                 return self.day_cell(cssclass, '%d %s' % (day, ''.join(body)))
+#             return self.day_cell(cssclass, day)
+#         return self.day_cell('noday', ' ')
+#
+#     def formatmonth(self, year, month):
+#         self.year, self.month = year, month
+#         return super(QuerysetCalendar, self).formatmonth(year, month)
+#
+#     def group_by_day(self, queryset):
+#         field = lambda item: getattr(item, self.datefield).day
+#         return dict(
+#             [(day, list(items)) for day, items in groupby(queryset, field)]
+#         )
+#
+#     def day_cell(self, cssclass, body):
+#         return '<td class="%s">%s</td>' % (cssclass, body)
 
-    def group_by_day(self, queryset):
-        field = lambda item: getattr(item, self.datefield).day
-        return dict(
-            [(day, list(items)) for day, items in groupby(queryset, field)]
-        )
 
-    def day_cell(self, cssclass, body):
-        return '<td class="%s">%s</td>' % (cssclass, body)
-
-
-#######
-
-
-from django.utils.safestring import mark_safe
-
-
-@login_required
-def calendar(request, year, month):
-    e = Expediente.objects.order_by('fecha_medicion').filter(
-        fecha_medicion__year=year, fecha_medicion__month=month
-        )
-    cal = QuerysetCalendar(e, 'fecha_medicion').formatmonth(int(year), int(month))
-    return render_to_response('tools/calendar.html', {'calendar': mark_safe(cal),})
+# ######
+# from django.utils.safestring import mark_safe
+#
+#
+# @login_required
+# def calendar(request, year, month):
+#     e = Expediente.objects.order_by('fecha_medicion').filter(
+#         fecha_medicion__year=year, fecha_medicion__month=month
+#         )
+#     cal = QuerysetCalendar(e, 'fecha_medicion').formatmonth(int(year),
+#                                                             int(month))
+#     return render_to_response('tools/calendar.html',
+#                               {'calendar': mark_safe(cal), })
