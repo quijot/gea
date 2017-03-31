@@ -6,7 +6,7 @@ from gea.views import Home, About, \
     PersonaList, PersonaDetail, \
     solicitud, visacion, \
     plano, set, catastro, \
-    caratula, dvapi, sie, calendar
+    caratula, dvapi, sie
 
 
 urlpatterns = [
