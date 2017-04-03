@@ -300,6 +300,7 @@ class CaratulaForm(forms.Form):
     inmueble = forms.CharField(widget=forms.Textarea(
         attrs={'placeholder': 'ej: Una fracción de terreno...'}),
         required=False)
+    matricula = forms.IntegerField(required=False)
     tomo = forms.IntegerField(required=False)
     par = forms.BooleanField(required=False)
     folio = forms.IntegerField(required=False)
