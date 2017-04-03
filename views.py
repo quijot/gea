@@ -378,11 +378,14 @@ class SolicitudForm(forms.Form):
     localidad = forms.ChoiceField(choices=CP, initial=CP_DEFAULT)
     provincia = forms.ChoiceField(choices=PROV, initial=PROV_DEFAULT)
     nota_titulo = forms.ChoiceField(label='Nota título', choices=NOTA)
-    nota = forms.CharField(label='Nota contenido',
-                           widget=forms.Textarea(attrs={'placeholder':
-                                                        'Ingrese el texto de la\
-                                                        nota correspondiente'
-                                                        }), required=False)
+    nota = forms.CharField(
+        label='Nota contenido',
+        widget=forms.Textarea(
+            attrs={
+                'placeholder': 'Ingrese el texto de la nota correspondiente'
+            }),
+        required=False
+    )
 
 
 @login_required
