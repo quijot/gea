@@ -21,18 +21,22 @@
     {% block encabezado %}
     <div class="encabezado">
       <table>
+      {% if e.expedienteprofesional_set %}
+        {% for ep in e.expedienteprofesional_set.all %}
         <tr>
           <td>
-            <strong><em>ALBERTO PESTARINI</em></strong><br />
-            <strong>Agrimensor</strong> ICoPA Nº 1.0014.5<br />
-            <a href="http://www.pestarini.com.ar">www.pestarini.com.ar</a>
+            <strong><em>{{ ep.profesional.nombres }} {{ ep.profesional.apellidos }}</em></strong><br />
+            <strong>{{ ep.profesional.titulo }}</strong> ICoPA Nº {{ ep.profesional.icopa }}<br />
+            <a href="{{ ep.profesional.web }}">{{ ep.profesional.web }}</a>
           </td>
           <td align="right">
-            (03404) 431206<br />
-            San Martín 430 1º piso<br/>
-            2252 Gálvez – Santa Fe
+            {{ ep.profesional.telefono }}<br />
+            {{ ep.profesional.domicilio }}<br/>
+            {{ ep.profesional.lugar }}
           </td>
         </tr>
+        {% endfor %}
+      {% endif %}
       </table>
     </div>
     {% endblock %}
