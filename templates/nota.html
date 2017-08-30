@@ -12,7 +12,7 @@
      a { color: black; text-decoration: none; border-bottom: 1px solid black }
      a:visited { text-decoration:none }
      a:hover { color: #4fb2d3 }
-     table { border: no-border; border-collapse: collapse; width: 100%}
+     table { border: no-border; border-collapse: collapse; width: 100% }
      th, td { border-bottom: 1px solid black }
     </style>
     {% endblock %}
@@ -23,7 +23,7 @@
       <table>
         <tbody>
           <tr>
-            <td colspan=2 style="text-align: center;">
+            <td colspan={{ e.expedienteprofesional_set.count }} style="text-align: center;">
               <span style="font-size:large; margin: auto;">
                 <strong><em>Estudio de Agrimensura &quot;Enrique A. Pestarini&quot;</em></strong>
               </span><br>
@@ -36,7 +36,7 @@
           <tr>
           {% if e.expedienteprofesional_set %}
             {% for ep in e.expedienteprofesional_set.all %}
-            <td style="border: none; {% if forloop.last %} text-align: right{% endif %}">
+            <td style="border: none; vertical-align: top; padding: 3px; {% if forloop.last %} text-align: right{% endif %}">
               <strong>{{ ep.profesional.nombres }} {{ ep.profesional.apellidos }}</strong><br>
               <em>{{ ep.profesional.titulo }} – ICoPA Nº {{ ep.profesional.icopa }}</em><br>
               <a href="mailto:{{ ep.profesional.email }}">{{ ep.profesional.email }}</a>
