@@ -13,7 +13,7 @@
      a:visited { text-decoration:none }
      a:hover { color: #4fb2d3 }
      table { border: no-border; border-collapse: collapse; width: 100%}
-     th, td { border-bottom: 1px solid black !important }
+     th, td { border-bottom: 1px solid black }
     </style>
     {% endblock %}
   </head>
@@ -21,22 +21,30 @@
     {% block encabezado %}
     <div class="encabezado">
       <table>
-      {% if e.expedienteprofesional_set %}
-        {% for ep in e.expedienteprofesional_set.all %}
-        <tr>
-          <td>
-            <strong><em>{{ ep.profesional.nombres }} {{ ep.profesional.apellidos }}</em></strong><br />
-            <strong>{{ ep.profesional.titulo }}</strong> ICoPA Nº {{ ep.profesional.icopa }}<br />
-            <a href="{{ ep.profesional.web }}">{{ ep.profesional.web }}</a>
-          </td>
-          <td align="right">
-            {{ ep.profesional.telefono }}<br />
-            {{ ep.profesional.domicilio }}<br/>
-            {{ ep.profesional.lugar }}
-          </td>
-        </tr>
-        {% endfor %}
-      {% endif %}
+        <tbody>
+          <tr>
+            <td colspan=2 style="text-align: center;">
+              <span style="font-size:large; margin: auto;">
+                <strong><em>Estudio de Agrimensura &quot;Enrique A. Pestarini&quot;</em></strong>
+              </span><br>
+              <span style="margin: auto;">
+                <em>(03404) 431206 – San Martín 430, 1&ordm; piso – 2252 Gálvez – Santa Fe</em><br>
+                <a href="http://pestarini.com.ar"><em>www.pestarini.com.ar</em></a>
+              </span>
+            </td>
+          </tr>
+          <tr>
+          {% if e.expedienteprofesional_set %}
+            {% for ep in e.expedienteprofesional_set.all %}
+            <td style="border: none; {% if forloop.last %} text-align: right{% endif %}">
+              <strong>{{ ep.profesional.nombres }} {{ ep.profesional.apellidos }}</strong><br>
+              <em>{{ ep.profesional.titulo }} – ICoPA Nº {{ ep.profesional.icopa }}</em><br>
+              <a href="mailto:{{ ep.profesional.email }}">{{ ep.profesional.email }}</a>
+            </td>
+            {% endfor %}
+          {% endif %}
+          </tr>
+        </tbody>
       </table>
     </div>
     {% endblock %}

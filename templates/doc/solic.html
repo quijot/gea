@@ -14,7 +14,7 @@
         <div>Sr. Jefe de la Dirección de Topocartografía</div>
         <div>SERVICIO de CATASTRO e INFORMACIÓN TERRITORIAL</div>
         <div>{{ circunscripcion }}</div>
-        <hr width="30%" align="left">
+        <div style="width: 30%"><hr></div>
       </div>
       <p>De nuestra mayor consideración:</p>
       <p class="sangria">{% if e.propietarios_count > 1 %}Quienes suscriben,{% else %}Quien suscribe,{% endif %}
@@ -63,9 +63,10 @@
               {% if c.poligono %}Polígono <a href="/admin/gea/catastro/?poligono={{ c.poligono }}"><strong>{{ c.poligono }}</strong></a>, {% endif %}
               {% if c.manzana %}Manzana <a href="/admin/gea/catastro/?manzana={{ c.manzana }}"><strong>{{ c.manzana }}</strong></a>, {% endif %}
               {% if c.parcela %}Parcela <a href="/admin/gea/catastro/?parcela={{ c.parcela }}"><strong>{{ c.parcela }}</strong></a>, {% endif %}
-              Sub-parcela {% if c.subparcela %}<a href="/admin/gea/catastro/?subparcela={{ c.subparcela }}"><strong>{{ c.subparcela }}</strong></a>{% else %} -- {% endif %}.</p>
+              Sub-parcela {% if c.subparcela %}<a href="/admin/gea/catastro/?subparcela={{ c.subparcela }}"><strong>{{ c.subparcela }}</strong></a>{% else %} -- {% endif %}.
             {% endfor %}
           {% endif %}
+          </li>
         {% endfor %}
         </ul>
       {% endif %}
@@ -74,7 +75,7 @@
       <br /><br />
       <table>
         <tr>
-          <th width="30%">Firma</th>
+          <th style="width: 30%">Firma</th>
           <th>Nombre</th>
           <th>Tipo y Nº Doc.</th>
           <th>CUIT/CUIL/CDI</th>
@@ -83,11 +84,11 @@
           {% for ep in e.expedientepersona_set.all %}
             {% if ep.propietario or ep.sucesor %}
             {% if not ep.sucesion %}
-              <tr height="80px">
+              <tr style="height: 80px">
                 <td></td>
                 <td>{{ ep.persona.apellidos }}<br />{{ ep.persona.nombres }}<br />{% if ep.partes_indivisas_propias %}<small>({{ ep.partes_indivisas_propias }}/{{ ep.partes_indivisas_total }} partes indivisas)</small>{% endif %}</td>
                 <td>{% if ep.persona.documento %}{% if ep.persona.show_tipo_doc %}{{ ep.persona.show_tipo_doc }}: {% endif %}{{ ep.persona.documento }}{% endif %}</td>
-                <td align="right">{{ ep.persona.cuit_cuil }}</td>
+                <td style="text-align: right">{{ ep.persona.cuit_cuil }}</td>
               </tr>
             {% endif %}
             {% endif %}
