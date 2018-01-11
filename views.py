@@ -153,7 +153,8 @@ class NombreSearchMixin(object):
 
     def get_queryset(self):
         q = super(NombreSearchMixin, self).get_queryset()
-        query = self.request.GET.get('search').split()
+        query = self.request.GET.get('search')
+        query = '' if not query else query.split()
         for w in query:
             q = q.filter(
                 Q(nombres__icontains=w)
