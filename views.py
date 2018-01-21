@@ -605,8 +605,8 @@ def sie(request):
             nro = form.cleaned_data['nro']
             dv = form.cleaned_data['digito']
             # dv = get_dvsie(mesa, nro)
-            base_url = 'https://www.santafe.gov.ar/index.php/apps/'
-            param = 'sie?mesa=%d&numero=%d&digito=%d' % (mesa, nro, dv)
+            base_url = 'https://www.santafe.gov.ar/index.php/apps/sie'
+            param = '?mesa=%d&numero=%d&digito=%d&tipoSIE=1' % (mesa, nro, dv)
             url = ''.join([base_url, param])
             return HttpResponseRedirect(url)
     else:
