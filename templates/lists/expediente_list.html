@@ -15,7 +15,7 @@
     <div class="form-group">
       <div class="input-group input-group-sm">
         <span class="input-group-addon"><i class="fa fa-folder"></i> <i class="fa fa-user"></i> <i class="fa fa-thumb-tack"></i></span>
-        <input type="text" id="search" name="search" placeholder="Expediente/Persona/Lugar/PII/Plano" class="form-control" value="{{ request.GET.search }}" size="35">
+        <input type="text" id="search" name="search" placeholder="Expediente/Persona/Lugar/PII/Plano/CoPA" class="form-control" value="{{ request.GET.search }}" size="35">
         <span class="input-group-btn"><button type="submit" class="btn btn-sm btn-success"><i class="fa fa-search"></i></button></span>
       </div>
       <div class="btn-group">
@@ -73,7 +73,7 @@
       <td><!-- PARTIDAS -->
       {% if e.expedientepartida_set %}
         {% for ep in e.expedientepartida_set.all %}
-          {% if ep.set_ruta %}<a href="{{ ep.set_ruta }}">{% endif %}{{ ep.partida.sd }}-{{ ep.partida }}{% if ep.set_ruta %}</a>{% endif %}{% if not forloop.last %}<br>{% endif %}
+          <a href="http://scit.santafe.gov.ar/mycv2/l_muestra_grafica2.php?cla={{ ep.partida.sd }}{{ ep.partida.pii|stringformat:"06d" }}{{ ep.partida.subpii|stringformat:"04d" }}"> {{ ep.partida.sd }}-{{ ep.partida }}</a>{% if not forloop.last %}<br>{% endif %}
         {% endfor %}
       {% endif %}
       </td>
