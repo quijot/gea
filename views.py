@@ -34,6 +34,7 @@ class SearchMixin(object):
             for w in q:
                 qset = qset.filter(
                     Q(id__contains=w) |
+                    Q(orden_numero__contains=w) |
                     Q(inscripcion_numero__contains=w) |
                     Q(expedientepartida__partida__pii__contains=w) |
                     Q(expedientepersona__persona__nombres__icontains=w) |
