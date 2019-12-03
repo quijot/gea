@@ -136,7 +136,7 @@ class TieneObjetoFilter(admin.SimpleListFilter):
 
 class TienePlanoFilter(admin.SimpleListFilter):
     title = _('tiene plano cargado')
-    parameter_name = 'plano'
+    parameter_name = 'plano_ruta'
 
     def lookups(self, request, model_admin):
         return (
@@ -263,14 +263,14 @@ class AntecedenteAdmin(admin.ModelAdmin):
     ordering = ['expediente', '-expediente_modificado', 'inscripcion_numero']
 
     def ver_plano(self, obj):
-        if obj.plano != '' and obj.plano is not None:
-            return '<a href="%s">%s</a>' % (obj.plano.url,
+        if obj.plano_ruta != '' and obj.plano_ruta is not None:
+            return '<a href="%s">%s</a>' % (obj.plano_ruta,
                                             obj.inscripcion_numero)
         else:
             return None
     ver_plano.allow_tags = True
     ver_plano.short_description = 'Ver plano'
-    ver_plano.admin_order_field = 'plano'
+    ver_plano.admin_order_field = 'inscripcion_plano'
 
 
 admin.site.register(Antecedente, AntecedenteAdmin)
@@ -447,7 +447,7 @@ class ExpedienteAdmin(NestedModelAdmin):
             'classes': ('wide', 'extrapretty', 'grp-collapse grp-open',),
         }),
         ('Otros', {
-            'fields': [('cancelado', 'cancelado_por'), ('plano', 'ver_plano')],
+            'fields': [('cancelado', 'cancelado_por'), ('ver_plano')],
             'classes': ('wide', 'extrapretty', 'grp-collapse grp-open',),
         }),
     ]
@@ -518,14 +518,14 @@ class ExpedienteAdmin(NestedModelAdmin):
     save_on_top = True
 
     def ver_plano(self, obj):
-        if obj.plano != '' and obj.plano is not None:
-            return '<a href="%s">%s</a>' % (obj.plano.url,
+        if obj.plano_ruta != '' and obj.plano_ruta is not None:
+            return '<a href="%s">%s</a>' % (obj.plano_ruta,
                                             obj.inscripcion_numero)
         else:
             return None
     ver_plano.allow_tags = True
     ver_plano.short_description = 'Ver plano'
-    ver_plano.admin_order_field = 'plano'
+    ver_plano.admin_order_field = 'inscripcion_plano'
 
 
 admin.site.register(Expediente, ExpedienteAdmin)

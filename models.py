@@ -3,7 +3,6 @@ from django_extensions.db.models import (
     TitleSlugDescriptionModel, TimeStampedModel)
 # from django.urls import reverse
 from django.core.urlresolvers import reverse
-from filebrowser.fields import FileBrowseField
 
 
 def CapitalizePhrase(string):
@@ -111,9 +110,6 @@ class Antecedente(models.Model):
                         default=None)
     plano_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    plano = FileBrowseField("Enlace al plano", max_length=200,
-                            directory="planos/", extensions=[".pdf"],
-                            blank=True, null=True)
 
 
 class Catastro(models.Model):
@@ -303,9 +299,6 @@ class Expediente(TimeStampedModel):
                                   default=None)
     plano_ruta = URLNullField(max_length=100, null=True, blank=True,
                               default=None)
-    plano = FileBrowseField("Enlace al plano", max_length=200,
-                            directory="planos/", extensions=[".pdf"],
-                            blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse('expediente', kwargs={'pk': str(self.id)})
@@ -359,9 +352,6 @@ class ExpedientePartida(models.Model):
     partida = models.ForeignKey('Partida')
     set_ruta = URLNullField(
         max_length=100, null=True, blank=True, default=None)
-    informe_catastral = FileBrowseField(max_length=200, directory="set/",
-                                        extensions=[".pdf"], blank=True,
-                                        null=True)
 
     class Meta:
         verbose_name = 'partida'
