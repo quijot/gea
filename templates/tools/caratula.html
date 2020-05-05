@@ -177,7 +177,7 @@
         <span>Sup. s/Título</span>
         {% with e.expedientepartida_set.all|first as ep %}
             {% with ep.catastro_set.all|first as c %}
-                {% if c.zona.id = 4 %}
+                {% if c.zona.id == 4 %}
         <span style="float: right">____<sup>has</sup> ____<sup>as</sup> ____<sup>cas</sup> ____<sup>dm&sup2;</sup></span>
                 {% else %}
         <span style="float: right">_______.____ m&sup2;</span>
@@ -191,7 +191,7 @@
       <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lote ___</span>
       {% with e.expedientepartida_set.all|first as ep %}
         {% with ep.catastro_set.all|first as c %}
-          {% if c.zona.id = 4 %}
+          {% if c.zona.id == 4 %}
       <span style="float: right">____<sup>has</sup> ____<sup>as</sup> ____<sup>cas</sup> ____<sup>dm&sup2;</sup></span>
           {% else %}
       <span style="float: right">_______.____ m&sup2;</span>
@@ -263,7 +263,7 @@
         </tr>
         <tr>
             <td>{{ c.seccion|add:"0"|stringformat:"02d" }}</td>
-            <td>{{ c.poligono }}</td>
+            <td>{{ c.poligono|default:"" }}</td>
             <td colspan="2">{{ c.manzana|add:"0"|stringformat:"04d" }}</td>
         </tr>
         <tr>

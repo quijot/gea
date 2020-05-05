@@ -1,41 +1,45 @@
-from django.conf.urls import url
+from django.urls import path
 
-from gea.views import Home, About, \
-    CatastroLocalList, \
-    ExpedienteList, ExpedienteDetail, \
-    PersonaList, PersonaDetail, \
-    solicitud, visacion, \
-    plano, set, catastro, \
-    caratula, dvapi, sie
-
+from gea.views import (
+    About,
+    CatastroLocalList,
+    ExpedienteDetail,
+    ExpedienteList,
+    Home,
+    PersonaDetail,
+    PersonaList,
+    caratula,
+    catastro,
+    dvapi,
+    plano,
+    set,
+    sie,
+    solicitud,
+    visacion,
+)
 
 urlpatterns = [
     # Inicio
-    url(r'^$', Home.as_view(), name='home'),
+    path("", Home.as_view(), name="home"),
     # About
-    url(r'^acerca/$', About.as_view(), name='about'),
+    path("acerca/", About.as_view(), name="about"),
     # Catastros Locales
-    url(r'^catastros-locales/$', CatastroLocalList.as_view(),
-        name='catastros_locales'),
+    path("catastros-locales/", CatastroLocalList.as_view(), name="catastros_locales"),
     # Expedientes
-    url(r'^expedientes/$', ExpedienteList.as_view(), name="expedientes"),
-    url(r'^expedientes/(?P<pk>\d+)/$', ExpedienteDetail.as_view(),
-        name="expediente"),
+    path("expedientes/", ExpedienteList.as_view(), name="expedientes"),
+    path("expedientes/<int:pk>/", ExpedienteDetail.as_view(), name="expediente"),
     # Personas
-    url(r'^personas/$', PersonaList.as_view(), name="personas"),
-    url(r'^personas/(?P<pk>\d+)/$', PersonaDetail.as_view(), name="persona"),
+    path("personas/", PersonaList.as_view(), name="personas"),
+    path("personas/<int:pk>/", PersonaDetail.as_view(), name="persona"),
     # Notas
-    url(r'^solicitud/$', solicitud, name="solicitud"),
-    url(r'^visacion/$', visacion, name="visacion"),
+    path("solicitud/", solicitud, name="solicitud"),
+    path("visacion/", visacion, name="visacion"),
     # Búsquedas
-    url(r'^plano/$', plano, name="buscar_plano"),
-    url(r'^set/$', set, name="buscar_set"),
-    url(r'^catastro/$', catastro, name="buscar_catastro"),
+    path("plano/", plano, name="buscar_plano"),
+    path("set/", set, name="buscar_set"),
+    path("catastro/", catastro, name="buscar_catastro"),
     # Herramientas
-    url(r'^caratula/$', caratula, name="caratula"),
-    url(r'^dvapi/$', dvapi, name='dvapi'),
-    url(r'^sie/$', sie, name='sie'),
-    # url(r'^cal/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', calendar,
-    #     name='cal'),
-    # url(r'^cal/$', calendar, name='cal'),
+    path("caratula/", caratula, name="caratula"),
+    path("dvapi/", dvapi, name="dvapi"),
+    path("sie/", sie, name="sie"),
 ]

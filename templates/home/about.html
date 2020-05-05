@@ -1,23 +1,22 @@
 {% extends "menu.html" %}
 {% block title %}GEA | Acerca de{% endblock %}
 {% block content %}
-  {% load static from staticfiles %}
-      <div class="col-md-12 jumbotron">
-        <img src="{% static "img/folder.png" %}" alt="Expedientes" height=120 class="pull-right">
-        <h1><a href="/"><strong>GEA</strong></a></h1>
-        <h4><strong>G</strong>estión de <strong>E</strong>xpedientes de <strong>A</strong>grimensores</h4>
-        <hr>
-        <blockquote class="blockquote-reverse">
-            <p><a href="https://github.com/quijot/gea/">Repositorio GitHub de la aplicación</a></p>
-            <p><a href="https://github.com/quijot/gea-package/">Repositorio GitHub del package</a></p>
-            <p><a href="https://pypi.python.org/pypi/gea/">Página PyPi del package</a></p>
-            <small>desarrollado por
-                <cite title="Santiago Pestarini">
-                    <a href="https://github.com/quijot/">Santiago Pestarini</a>
-                </cite>
-            </small>
-        </blockquote>
-      </div>
+{% load static %}
+<div class="col-md-12 jumbotron">
+    <img src="{% static 'img/folder.png' %}" alt="Expedientes" height=120 class="pull-right">
+    <h1><a href="/"><strong>GEA</strong></a></h1>
+    <h4><strong>G</strong>estión de <strong>E</strong>xpedientes de <strong>A</strong>grimensores</h4>
+    <hr>
+    <blockquote class="blockquote-reverse">
+        <p><a href="https://github.com/quijot/gea/">Repositorio GitHub de la aplicación</a></p>
+        <p><a href="https://github.com/quijot/gea-package/">Repositorio GitHub del package</a></p>
+        <p><a href="https://pypi.python.org/pypi/gea/">Página PyPi del package</a></p>
+        <small>desarrollado por
+            <cite title="Santiago Pestarini">
+                <a href="https://github.com/quijot/">Santiago Pestarini</a>
+            </cite>
+        </small>
+    </blockquote>
+</div>
 {% endblock %}
 {% block top %}{% endblock %}
-
